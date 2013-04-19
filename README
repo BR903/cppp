@@ -1,0 +1,49 @@
+cppp is a partial preprocessor for C/C++ code. It implements enough of
+the C preprocessor to identify the preprocessor statements #if,
+#ifdef, et al., and applies their effects for the identifiers that are
+specified on the command-line. Preprocessor statements using
+identifiers not specified by the user are passed through without
+modification. And no other part of the input is altered.
+
+Thus, if cppp is invoked with the options -DFOO -UBAR, then FOO will
+be defined, BAR will be undefined, and all other identifiers will be
+unaffected. A section guarded by "#ifdef FOO" will be included in the
+output without the guard statements, and a section guarded by "#ifdef
+BAR" will be entirely dropped from the output.
+
+In addition to removing #ifdef statements, cppp understands complex
+expressions in #if statements that involve the defined operator, and
+will apply the effects even partially. Thus for example the
+preprocessor statement "#if (defined(BAR) || defined(BAZ))" would be
+edited to read "#if defined(BAZ)" in the output.
+
+cppp can also handle simple numeric tests. For example, giving cppp
+the option -D_LIB_VERSION=5 would cause the preprocessor statement
+"#if _LIB_VERSION >= 4" to succeed. Note, however, that cppp is
+limited to dealing with integer constants. The preprocessor statement
+"#if _LIB_VERSION >= _HEADER_FILE_VERSION" would simply get rewritten
+to "#if 5 >= _HEADER_FILE_VERSION", even if a definition for
+_HEADER_FILE_VERSION was provided in the same file.
+
+The general purpose of this program is to deal with legacy code bases
+where #ifdefs have crept in and infiltrated the source. This sort of
+thing usually happens while code is transitioning from one platform to
+another, in the misguided belief that this will ease the process
+rather than make it more confusing. Then, if the time finally comes
+that the ifdefs can be safely removed, it often doesn't get done
+because it's too tedious and error-prone to do it manually.
+
+I originally wrote cppp as an interesting exercise, but I later wound
+up using it to save myself from just such a tedious task. Sadly,
+because the code was not originally intended to be seen by anyone, it
+is not well-written and in some places it is downright opaque. I have
+attempted to ameliorate this by cleaning up some of the most egregious
+inconsistencies and adding a handful of comments, but the central
+functions are quite large and not easily explicated (particularly with
+all the intervening years since the time of its original creation). I
+offer it solely as a tool that might save you from a mind-numbing
+chore, but not as something to learn from.
+
+Brian Raiter
+breadbox@muppetlabs.com
+June, 2011

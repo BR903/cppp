@@ -1,0 +1,11 @@
+There are no special installation steps. Just run make to build the
+program. By default make install will place cppp under /usr/local;
+edit the prefix variable at the top of the Makefile to change this.
+
+The program is written almost entirely in portable C, but there are a
+handful of functions it needs that are beyond the standard C library.
+(Specifically, functions that work with directories.) These functions
+are collected in the file unixisms.c. Porting this file is all that is
+needed to port cppp to another platform. An example of a replacement
+file is included, named unixisms-win32.c. Replace unixisms.c with this
+file to build cppp for windows.
