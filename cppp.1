@@ -1,0 +1,79 @@
+.TH CPPP 1 "November 1995"
+.LO 1
+.SH NAME
+cppp \- C Pre-preprocessor
+.SH SYNOPSIS
+.B cppp
+[\-DU symbol ...] [source ... [dest]]
+.SH DESCRIPTION
+.B cppp
+mimics the C preprocessor enough to find the #ifdef, #ifndef, and
+#if preprocessor commands, and follows them for the symbols that are
+specified on the command line. All other symbols are left unprocessed.
+.SH OPTIONS
+.TP
+.BI \-D " symbol"
+Causes
+.I symbol
+to be defined during pre-preprocessing.
+.TP
+.BI \-U " symbol"
+Causes
+.I symbol
+to be undefined during pre-preprocessing.
+.TP
+.BI \-h
+Displays help and exits.
+.P
+If the
+.I source
+and/or
+.I dest
+files are missing from the command line, standard input and/or
+standard output will be used.
+.P
+If multiple
+.I source
+files are specified, then
+.I dest
+must be the name of a directory which will receive the output files.
+.SH TECHNICAL DETAILS
+#if lines can contain more than one test (using the defined preprocessor
+operator), so such lines may be edited, rather than merely omitted. Also,
+#elif lines may change into #if or #else lines.
+.P
+For example, given the following input file:
+.P
+.nf
+#if defined(FOO) || defined(BAR)
+/* first line */
+#elif (!defined(FOO) && !defined(BAZ))
+/* second line */
+#endif
+.fi
+.P
+here are some of the possible outputs:
+.P
+.nf
+cppp -DFOO         cppp -UFOO -UBAR    cppp -UFOO -UBAZ
+
+/* first line */   #if !defined(BAZ)   #if defined(BAR)
+                   /* second line */   /* first line */
+                   #endif              #else
+                                       /* second line */
+                                       #endif
+.fi
+.P
+Note that when preprocessor commands are nested, it is possible to have
+an empty section in the output.
+.B cppp
+does not edit these out.
+.SH BUGS
+.B cppp
+will not recognize a single symbol or other token if it is broken
+across two lines that are spliced with a backslash.
+.P
+Trigraphs are not recognized at all.
+.SH AUTHOR
+Brian Raiter
+.IR <breadbox@muppetlabs.com> .
