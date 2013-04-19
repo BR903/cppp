@@ -18,14 +18,14 @@ int changedir(char const *name)
     return SetCurrentDirectory(name);
 }
 
-/* Opens a file descriptor on the current directory.
+/* Saves a reference to the current directory.
  */
 int savedir(void)
 {
     return GetCurrentDirectory(sizeof saveddir, saveddir) > 0;
 }
 
-/* Uses the saved file description to change the directory back.
+/* Uses the saved reference to change the directory back.
  */
 int restoredir(void)
 {

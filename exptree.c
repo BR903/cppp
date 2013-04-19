@@ -87,8 +87,8 @@ static struct opinfo const infixops[] = {
     { opMultiply,      "*", 1, 13, TRUE  },
     { opDivide,        "/", 1, 13, TRUE  },
     { opModulo,        "%", 1, 13, TRUE  },
-    { opGreater,       "<", 1, 10, TRUE  },
-    { opLesser,        ">", 1, 10, TRUE  },
+    { opLesser,        "<", 1, 10, TRUE  },
+    { opGreater,       ">", 1, 10, TRUE  },
     { opAdd,	       "+", 1, 12, TRUE  },
     { opSubtract,      "-", 1, 12, TRUE  },
     { opBitAnd,        "&", 1,  8, TRUE  },
@@ -582,8 +582,8 @@ long evaltree(struct exptree *t, int *defined)
 	  case opMultiply:	val1 = val1 * val2;		break;
 	  case opDivide:	val1 = val1 / val2;		break;
 	  case opModulo:	val1 = val1 % val2;		break;
-	  case opGreater:	val1 = val1 > val2;		break;
 	  case opLesser:	val1 = val1 < val2;		break;
+	  case opGreater:	val1 = val1 > val2;		break;
 	  case opAdd:		val1 = val1 + val2;		break;
 	  case opSubtract:	val1 = val1 - val2;		break;
 	  case opBitAnd:	val1 = val1 & val2;		break;

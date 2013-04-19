@@ -104,6 +104,9 @@ void error(enum errortype type)
       case errOpenIf:
 	fputs("#if not closed.", stderr);
 	break;
+      case errElifWithIfdef:
+	fputs("#elif matched with #ifdef/#ifndef.", stderr);
+	break;
       case errBadCharLiteral:
 	fputs("bad character literal.", stderr);
 	break;

@@ -22,6 +22,7 @@
 #define F_If		0x0001		/* inside a #if section */
 #define F_Else		0x0002		/* inside a #else section */
 #define F_Elif		0x0004		/* inside a #elif section */
+#define F_Ifdef		0x0008		/* #if is actually #ifdef/#ifndef */
 #define F_Ours		0x0010		/* guarded by user-specified symbol */
 #define F_Copy		0x0020		/* section is passed to output */
 #define F_IfModify	0x0040		/* modified #if expression */
@@ -176,11 +177,12 @@ static void seq(struct ppproc *ppp)
 	    break;
 	}
 	++ppp->level;
-	ppp->stack[ppp->level] = ppp->copy ? F_Copy : 0;
+	ppp->stack[ppp->level] = F_If | F_Ifdef;
 	if (!ppp->copy) {
 	    input = restofline(ppp->cl, input);
 	    break;
 	}
+	ppp->stack[ppp->level] |= F_Copy;
 	size = getidentifierlength(input);
 	if (!size) {
 	    error(errEmptyIf);
@@ -265,6 +267,8 @@ static void seq(struct ppproc *ppp)
 	    error(errIfsTooDeep);
 	    break;
 	}
+	if (ppp->stack[ppp->level] & F_Ifdef)
+	    error(errElifWithIfdef);
 	ppp->stack[ppp->level] |= F_Else;
 	if (ppp->stack[ppp->level] & F_Ours)
 	    ppp->copy = !ppp->copy;
