@@ -1,24 +1,28 @@
-# Makefile for cppp
+#  Makefile for cppp
 
-CC = gcc -ggdb
-CFLAGS = -Wall -W
+# Where to install
+#
+prefix = /usr/local
 
-OBJLIST = unixisms.o error.o strset.o clex.o exptree.o ppproc.o main.o
+CC = gcc
+CFLAGS = -Wall -Wextra -O2
+
+OBJLIST = gen.o unixisms.o error.o symset.o clexer.o exptree.o ppproc.o cppp.o
 
 cppp: $(OBJLIST)
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LOADLIBES)
 
-unixisms.o : unixisms.c unixisms.h
-error.o    : error.c error.h
-strset.o   : strset.c strset.h main.h
-clex.o     : clex.c clex.h main.h error.h
-exptree.o  : exptree.c exptree.h main.h error.h strset.h clex.h
-ppproc.o   : ppproc.c ppproc.h main.h error.h strset.h clex.h exptree.h
-main.o     : main.c main.h unixisms.h error.h strset.h ppproc.h
+gen.o     : gen.c gen.h
+unixisms.o: unixisms.c unixisms.h
+error.o   : error.c error.h gen.h
+symset.o  : symset.c symset.h gen.h
+clexer.o  : clexer.c clexer.h gen.h error.h
+exptree.o : exptree.c exptree.h gen.h error.h symset.h clexer.h
+ppproc.o  : ppproc.c ppproc.h gen.h error.h symset.h clexer.h exptree.h
+cppp.o    : cppp.c gen.h unixisms.h error.h symset.h ppproc.h
+
+install:
+	cp ./cppp $(prefix)/bin/.
+	cp ./cppp.1 $(prefix)/share/man/man1/.
 
 clean:
 	rm -f $(OBJLIST) cppp
-
-dist:
-	tar -czvf cppp.tar.gz Makefile clex.[ch] cppp.1 error.[ch] \
-             exptree.[ch] main.[ch] ppproc.[ch] strset.[ch] unixisms.[ch]

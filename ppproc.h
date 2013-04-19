@@ -1,33 +1,32 @@
+/* ppproc.h: Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>
+ * License GPLv2+: GNU GPL version 2 or later.
+ * This is free software; you are free to change and redistribute it.
+ * There is NO WARRANTY, to the extent permitted by law.
+ */
 #ifndef	_ppproc_h_
 #define	_ppproc_h_
 
-#include	<stdio.h>
-#include	"error.h"
-#include	"strset.h"
-#include	"clex.h"
+/*
+ * The ppproc object does the actual work of identifying preprocessor
+ * statements affected by the user's requested definitions and
+ * undefintions, and determining what the resulting output needs to
+ * contain.
+ */
 
-typedef	struct ppproc {
-    clexer     *cl;
-    strset     *defs;
-    strset     *undefs;
-    int		level;
-    int	       *stack;
-    char       *line;
-    int		linesize;
-    int		copy;
-    int		absorb;
-    int		endline;
-    errhandler *err;
-} ppproc;
+struct ppproc;
+struct symset;
 
-extern void initppproc(ppproc *ppp, strset *defs, strset *undefs,
-				    errhandler *err);
-extern void closeppproc(ppproc *ppp);
-extern void beginfile(ppproc *ppp);
-extern void endfile(ppproc *ppp);
+/* Creates a ppproc object initialized with pre-defined sets of defined
+ * and undefined symbols.
+ */
+extern struct ppproc *initppproc(struct symset *defs, struct symset *undefs);
 
-extern int readline(ppproc *ppp, FILE *infile);
-extern int writeline(ppproc *ppp, FILE *outfile);
-extern void prepreprocess(ppproc *ppp, FILE *infile, FILE *outfile);
+/* Deallocates the ppproc object.
+ */
+extern void freeppproc(struct ppproc *ppp);
+
+/* Partially preprocesses infile's contents to outfile.
+ */
+extern void partialpreprocess(struct ppproc *ppp, void *infile, void *outfile);
 
 #endif

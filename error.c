@@ -1,81 +1,88 @@
-#include	<stdio.h>
-#include	<string.h>
-#include	<stdarg.h>
-#include	<errno.h>
-#include	"error.h"
+/* error.c: Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>
+ * License GPLv2+: GNU GPL version 2 or later.
+ * This is free software; you are free to change and redistribute it.
+ * There is NO WARRANTY, to the extent permitted by law.
+ */
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include "gen.h"
+#include "error.h"
 
-void initerrhandler(errhandler *e)
+/* Persistent data needed to report and track errors.
+ */
+struct errhandler {
+    char const	   *file;	/* a filename to prefix error messages with */
+    unsigned long   lineno;	/* a line number to accompany the filename */
+    int		    count;	/* total number of errors seen */
+    enum errortype  type;	/* the most recent error */
+};
+
+/* There is only one error handler for the program.
+ */
+struct errhandler err;
+
+/* Sets the name of the file to report errors for.
+ */
+void seterrorfile(char const *file)
 {
-    e->file = NULL;
-    e->lineno = 0;
-    e->err = errNone;
-    e->count = 0;
+    err.file = file;
+    err.lineno = 0;
+    err.type = errNone;
 }
 
-void reseterrhandler(errhandler *e)
+/* Sets the file's current line number.
+ */
+void seterrorline(unsigned long lineno)
 {
-    e->err = errNone;
-    e->count = 0;
+    err.lineno = lineno;
 }
 
-void seterrorfile(errhandler *e, char const *file)
+/* Increments the current line number.
+ */
+void nexterrorline(void)
 {
-    e->file = file;
-    e->lineno = 0;
-    e->err = errNone;
+    ++err.lineno;
 }
 
-void seterrorline(errhandler *e, unsigned long lineno)
+/* Returns the current error count.
+ */
+int geterrormark(void)
 {
-    e->lineno = lineno;
+    return err.count;
 }
 
-void nexterrorline(errhandler *e)
+/* Returns true if new errors have been recorded since the last
+ * retrieved count.
+ */
+int errorsincemark(int mark)
 {
-    ++e->lineno;
+    return err.count > mark;
 }
 
-int getlasterror(errhandler *e)
+/* Logs an error. The error is recorded in the error handler, and a
+ * formatted message is displayed to the user.
+ */
+void error(enum errortype type)
 {
-    return e->err;
-}
-
-int geterrormark(errhandler *e)
-{
-    return e->count;
-}
-
-int errorsincemark(errhandler *e, int mark)
-{
-    return e->count > mark;
-}
-
-void error(errhandler *e, int err, ...)
-{
-    va_list	args;
-    int		n;
-
-    e->err = err;
-    if (err == errNone)
+    err.type = type;
+    if (type == errNone)
 	return;
-    ++e->count;
+    ++err.count;
 
-    if (e->file)
-	if (e->lineno)
-	    fprintf(stderr, "%s:%lu: ", e->file, e->lineno);
+    if (err.file) {
+	if (err.lineno)
+	    fprintf(stderr, "%s:%lu: ", err.file, err.lineno);
 	else
-	    fprintf(stderr, "%s: ", e->file);
-    else
-	if (e->lineno)
-	    fprintf(stderr, "line %lu: ", e->lineno);
+	    fprintf(stderr, "%s: ", err.file);
+    } else {
+	if (err.lineno)
+	    fprintf(stderr, "line %lu: ", err.lineno);
 	else
-	    fputs("error: ", stderr);
+	    fprintf(stderr, "error: ");
+    }
 
-    va_start(args, err);
-    switch (err) {
-      case errLowMem:
-	fputs("out of memory.", stderr);
-	break;
+    switch (type) {
       case errSyntax:
 	fputs("preprocessor syntax error.", stderr);
 	break;
@@ -86,20 +93,16 @@ void error(errhandler *e, int err, ...)
 	    fputs("file I/O error.", stderr);
 	break;
       case errIfsTooDeep:
-	fprintf(stderr, "too many nested ifs.");
+	fputs("too many nested #ifs.", stderr);
 	break;
       case errDanglingElse:
-	fputs("else not matched to any if.", stderr);
+	fputs("#else not matched to any #if.", stderr);
 	break;
       case errDanglingEnd:
-	fputs("endif found without any if.", stderr);
+	fputs("#endif found without any #if.", stderr);
 	break;
       case errOpenIf:
-	n = va_arg(args, int);
-	if (n == 1)
-	    fputs("if not closed.", stderr);
-	else
-	    fprintf(stderr, "%d ifs not closed.", n);
+	fputs("#if not closed.", stderr);
 	break;
       case errBadCharLiteral:
 	fputs("bad character literal.", stderr);
@@ -117,13 +120,13 @@ void error(errhandler *e, int err, ...)
 	fputs("unmatched left parenthesis.", stderr);
 	break;
       case errEmptyIf:
-	fputs("if with no identifier.", stderr);
+	fputs("#if with no argument.", stderr);
 	break;
       case errMissingOperand:
 	fputs("operator with missing expression.", stderr);
 	break;
-      case errBadPreprocessor:
-	fputs("bad preprocessor statement.", stderr);
+      case errZeroDiv:
+	fputs("division by zero in expression.", stderr);
 	break;
       case errIfSyntax:
 	fputs("bad syntax in #if expression.", stderr);
@@ -134,10 +137,8 @@ void error(errhandler *e, int err, ...)
 	fputs("comment spans deleted line.", stderr);
 	break;
       default:
-	fprintf(stderr, "number %d.", err);
+	fprintf(stderr, "unspecified error (%d).", type);
 	break;
     }
-    va_end(arg);
-
     fputc('\n', stderr);
 }

@@ -1,79 +1,79 @@
-.TH CPPP 1 "November 1995"
+.TH CPPP 1
 .LO 1
 .SH NAME
-cppp \- C Pre-preprocessor
+cppp \- C partial preprocessor
 .SH SYNOPSIS
 .B cppp
-[\-DU symbol ...] [source ... [dest]]
+[OPTIONS] [\fISOURCE\fR ... [\fIDEST\fR]]
 .SH DESCRIPTION
 .B cppp
-mimics the C preprocessor enough to find the #ifdef, #ifndef, and
-#if preprocessor commands, and follows them for the symbols that are
+mimics the C preprocessor enough to find the #ifdef, #ifndef, and #if
+preprocessor commands, and applies them for the symbols that are
 specified on the command line. All other symbols are left unprocessed.
+.P
+If more than one
+.I SOURCE
+is specified, then
+.I DEST
+names a directory, to which all of the partially-preprocessed files
+are written with the same names as the original source files.
+.P
+If
+.I DEST
+is omitted, the partially-preprocessed
+.I SOURCE
+is emitted to standard output. If
+.I SOURCE
+is also omitted,
+.B cppp
+reads from standard input.
+.P
+#if lines can contain more than one test (using the defined
+preprocessor operator), so such lines may be edited, rather than
+merely omitted. Likewise, #elif lines may change into #if or #else
+lines.
 .SH OPTIONS
 .TP
-.BI \-D " symbol"
-Causes
-.I symbol
-to be defined during pre-preprocessing.
+\fB\-D\fR \fISYMBOL\fR[\fB=\fR\fIVALUE\fR]
+Treat
+.I SYMBOL
+as defined to be
+.I VALUE
+during partial preprocessing. 
+.IR VALUE ,
+if present, must be an integer constant. If
+.I VALUE
+is omitted,
+.I SYMBOL
+will be defined as 1.
 .TP
-.BI \-U " symbol"
-Causes
-.I symbol
-to be undefined during pre-preprocessing.
+\fB\-U\fR \fISYMBOL\fR
+Treat
+.I SYMBOL
+as undefined during partial preprocessing.
 .TP
-.BI \-h
-Displays help and exits.
-.P
-If the
-.I source
-and/or
-.I dest
-files are missing from the command line, standard input and/or
-standard output will be used.
-.P
-If multiple
-.I source
-files are specified, then
-.I dest
-must be the name of a directory which will receive the output files.
-.SH TECHNICAL DETAILS
-#if lines can contain more than one test (using the defined preprocessor
-operator), so such lines may be edited, rather than merely omitted. Also,
-#elif lines may change into #if or #else lines.
-.P
-For example, given the following input file:
-.P
-.nf
-#if defined(FOO) || defined(BAR)
-/* first line */
-#elif (!defined(FOO) && !defined(BAZ))
-/* second line */
-#endif
-.fi
-.P
-here are some of the possible outputs:
-.P
-.nf
-cppp -DFOO         cppp -UFOO -UBAR    cppp -UFOO -UBAZ
-
-/* first line */   #if !defined(BAZ)   #if defined(BAR)
-                   /* second line */   /* first line */
-                   #endif              #else
-                                       /* second line */
-                                       #endif
-.fi
-.P
-Note that when preprocessor commands are nested, it is possible to have
-an empty section in the output.
-.B cppp
-does not edit these out.
+.B \--help
+Display help and exit.
+.TP
+.B \--version
+Display version information and exit.
 .SH BUGS
 .B cppp
-will not recognize a single symbol or other token if it is broken
-across two lines that are spliced with a backslash.
+does not recognize identifiers and tokens with escaped line breaks
+embedded.
 .P
-Trigraphs are not recognized at all.
-.SH AUTHOR
-Brian Raiter
-.IR <breadbox@muppetlabs.com> .
+Trigraphs and digraphs are not recognized.
+.P
+It is possible (using nest preprocessor commands) to produce an empty
+section in the output.
+.B cppp
+does not collapse these.
+.P
+Comments on edited preprocessor lines are not always preserved.
+.SH COPYRIGHT
+Copyright \(co 1995, 1999, 2011 Brian Raiter
+<breadbox@muppetlabs.com>.
+.P
+License GPLv2+: GNU GPL version 2 or later. This is free software: you
+are free to change and redistribute it. There is NO WARRANTY, to the
+extent permitted by law.

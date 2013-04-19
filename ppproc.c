@@ -1,384 +1,432 @@
-#include	<stdio.h>
-#include	<stdlib.h>
-#include	<string.h>
-#include	<stdarg.h>
-#include	"main.h"
-#include	"error.h"
-#include	"strset.h"
-#include	"exptree.h"
-#include	"ppproc.h"
+/* ppproc.c: Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>
+ * License GPLv2+: GNU GPL version 2 or later.
+ * This is free software; you are free to change and redistribute it.
+ * There is NO WARRANTY, to the extent permitted by law.
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "gen.h"
+#include "error.h"
+#include "symset.h"
+#include "clexer.h"
+#include "exptree.h"
+#include "ppproc.h"
 
-static int const maxstack = 1024;
+/* Maximum nesting level of #if statements.
+ */
+#define STACK_SIZE 1024
 
-enum
+/* State flags tracking the current state of ppproc.
+ */
+#define F_If		0x0001		/* inside a #if section */
+#define F_Else		0x0002		/* inside a #else section */
+#define F_Elif		0x0004		/* inside a #elif section */
+#define F_Ours		0x0010		/* guarded by user-specified symbol */
+#define F_Copy		0x0020		/* section is passed to output */
+#define F_IfModify	0x0040		/* modified #if expression */
+#define F_ElseModify	0x0080		/* modified #elif expression */
+
+/* Return codes for the seqif() function.
+ */
+enum status
 {
-    fIf = 0x0001, fElse = 0x0002, fElif = 0x0004, fOurs = 0x0010,
-    fCopy = 0x0020, fIfModify = 0x0040, fElseModify = 0x0080
-};
-
-enum
-{
-    statError = 0, statDefined, statUndefined, statPartDefined, statUnaffected
+    statError, statDefined, statUndefined, statPartDefined, statUnaffected
 }; 
 
-static char const *seqif(ppproc *ppp, char *ifexp, int *status)
-{
-    exptree	tree;
-    char const *ret;
-    char       *s;
-    int		defined, n;
+/* The partial preprocessor.
+ */
+struct ppproc {
+    struct clexer  *cl;			/* the lexer */
+    struct symset  *defs;		/* list of defined symbols */
+    struct symset  *undefs;		/* list of undefined symbols */
+    char	   *line;		/* the current line of input */
+    int		    linealloc;		/* memory allocated for line */
+    int		    copy;		/* true if input is going to output */
+    int		    absorb;		/* true if input is being suppressed */
+    int		    endline;		/* false if line has no '\n' at end */
+    int		    level;		/* current nesting level */
+    int		    stack[STACK_SIZE];	/* state flags for each level */
+};
 
-    initexptree(&tree, ppp->err);
+/* Allocates a partial preprocessor object.
+ */
+struct ppproc *initppproc(struct symset *defs, struct symset *undefs)
+{
+    struct ppproc *ppp;
+
+    ppp = allocate(sizeof *ppp);
+    ppp->cl = initclexer();
+    ppp->defs = defs;
+    ppp->undefs = undefs;
+    ppp->linealloc = 128;
+    ppp->line = allocate(ppp->linealloc);
+    return ppp;
+}
+
+/* Deallocates the partial preprocessor object.
+ */
+void freeppproc(struct ppproc *ppp)
+{
+    freeclexer(ppp->cl);
+    deallocate(ppp->line);
+    deallocate(ppp);
+}
+
+/* Set the state appropriate for the beginning of a file.
+ */
+static void beginfile(struct ppproc *ppp)
+{
+    ppp->level = -1;
+    ppp->copy = TRUE;
+    ppp->absorb = FALSE;
+}
+
+/* Mark the ppproc as having reached the end of the current file.
+ */
+static void endfile(struct ppproc *ppp)
+{
+    endstream(ppp->cl);
+    if (ppp->level != -1)
+	error(errOpenIf);
+    ppp->line[0] = '\0';
+}
+
+/* Partially preprocesses a #if expression. ifexp points to the text
+ * immediately following the #if. The function seeks to the end of the
+ * expression and evaluates it. The return value points to the text
+ * immediately following the expression. If the expression has a
+ * defined state, status receives either statDefined or statUndefined.
+ * If the expression's contents are disjoint from the defined and
+ * undefined symbols, status receives statUnaffected. Otherwise the
+ * expression is in a partial state, in which case status receives
+ * statPartDefined, and the original string is modified so as to
+ * remove the parts of the expression that have a defined state.
+ */
+static char const *seqif(struct ppproc *ppp, char *ifexp, enum status *status)
+{
+    struct exptree *tree;
+    char const *ret;
+    char *str;
+    int defined, n;
+
+    tree = initexptree();
     *status = statUnaffected;
 
-    n = geterrormark(ppp->err);
-    ret = parseexp(&tree, ppp->cl, ifexp, 0);
-    if (errorsincemark(ppp->err, n)) {
-	*status = statError;
-	goto quit;
-    } else if (!endoflinep(ppp->cl)) {
-	error(ppp->err, errIfSyntax);
+    n = geterrormark();
+    ret = parseexptree(tree, ppp->cl, ifexp);
+    if (errorsincemark(n)) {
 	*status = statError;
 	goto quit;
     }
 
     n = 0;
     if (ppp->defs)
-	n += markdefined(&tree, ppp->defs, TRUE);
+	n += markdefined(tree, ppp->defs, TRUE);
     if (ppp->undefs)
-	n += markdefined(&tree, ppp->undefs, FALSE);
+	n += markdefined(tree, ppp->undefs, FALSE);
     if (n) {
-	*status = evaltree(&tree, &defined) ? statDefined : statUndefined;
+	*status = evaltree(tree, &defined) ? statDefined : statUndefined;
 	if (!defined) {
 	    *status = statPartDefined;
-	    s = xmalloc(strlen(ifexp) + 1);
-	    n = unparseevaluated(&tree, s);
-	    strcpy(s + n, ifexp + getexplength(&tree));
-	    strcpy(ifexp, s);
-	    free(s);
+	    str = allocate(strlen(ifexp) + 1);
+	    n = unparseevaluated(tree, str);
+	    strcpy(str + n, ifexp + getexplength(tree));
+	    strcpy(ifexp, str);
+	    deallocate(str);
 	}
     }
 
   quit:
-    cleartree(&tree, TRUE);
+    freeexptree(tree);
     return ret;
 }
 
-static void seq(ppproc *ppp)
+/* Partially preprocesses the current line of input. If the input
+ * contains a preprocessor statement, the state of ppproc is updated
+ * to reflect the current section, and if necessary the line of input
+ * will be altered for output.
+ */
+static void seq(struct ppproc *ppp)
 {
-    char const *in;
+    char const *input;
     char const *cmd;
-    int		incomment, status;
-    int		id, size, n;
+    enum status status;
+    int incomment;
+    enum ppcmd id;
+    int size, n;
 
     incomment = ccommentp(ppp->cl);
     ppp->absorb = FALSE;
-    in = examinechar(ppp->cl, ppp->line);
-    while (!preprocessorlinep(ppp->cl)) {
+    input = examinechar(ppp->cl, ppp->line);
+    while (!preproclinep(ppp->cl)) {
 	if (endoflinep(ppp->cl))
 	    return;
-	in = nextchar(ppp->cl, in);
+	input = nextchar(ppp->cl, input);
     }
 
-    cmd = skipwhite(ppp->cl, nextchar(ppp->cl, in));
-    in = getpreprocessorcmd(ppp->cl, cmd, &id);
+    cmd = skipwhite(ppp->cl, nextchar(ppp->cl, input));
+    input = getpreprocessorcmd(ppp->cl, cmd, &id);
 
     switch (id) {
       case cmdIfdef:
       case cmdIfndef:
-	if (ppp->level >= maxstack - 1) {
-	    error(ppp->err, errIfsTooDeep);
+	if (ppp->level + 1 >= sizearray(ppp->stack)) {
+	    error(errIfsTooDeep);
 	    break;
 	}
 	++ppp->level;
-	ppp->stack[ppp->level] = ppp->copy ? fCopy : 0;
+	ppp->stack[ppp->level] = ppp->copy ? F_Copy : 0;
 	if (!ppp->copy) {
-	    in = restofline(ppp->cl, in);
+	    input = restofline(ppp->cl, input);
 	    break;
 	}
-	size = getidentifierlength(in);
+	size = getidentifierlength(input);
 	if (!size) {
-	    error(ppp->err, errEmptyIf);
+	    error(errEmptyIf);
 	    break;
 	}
-	if (ppp->defs && findsymbolinset(ppp->defs, in))
+	if (ppp->defs && findsymbolinset(ppp->defs, input, NULL))
 	    n = statDefined;
-	else if (ppp->undefs && findsymbolinset(ppp->undefs, in))
+	else if (ppp->undefs && findsymbolinset(ppp->undefs, input, NULL))
 	    n = statUndefined;
 	else
 	    n = statUnaffected;
-	in = skipwhite(ppp->cl, nextchars(ppp->cl, in, size));
+	input = skipwhite(ppp->cl, nextchars(ppp->cl, input, size));
 	if (!endoflinep(ppp->cl)) {
-	    error(ppp->err, errSyntax);
+	    error(errSyntax);
 	    break;
 	}
 	if (n != statUnaffected) {
 	    ppp->absorb = TRUE;
-	    ppp->stack[ppp->level] |= fOurs;
+	    ppp->stack[ppp->level] |= F_Ours;
 	    ppp->copy = n == (id == cmdIfdef ? statDefined : statUndefined);
 	}
 	break;
 
       case cmdIf:
-	if (ppp->level >= maxstack - 1) {
-	    error(ppp->err, errIfsTooDeep);
+	if (ppp->level + 1 >= sizearray(ppp->stack)) {
+	    error(errIfsTooDeep);
 	    break;
 	}
 	++ppp->level;
-	ppp->stack[ppp->level] = fIf | (ppp->copy ? fCopy : 0);
+	ppp->stack[ppp->level] = F_If | (ppp->copy ? F_Copy : 0);
 	if (!ppp->copy) {
-	    in = restofline(ppp->cl, in);
+	    input = restofline(ppp->cl, input);
 	    break;
 	}
-	in = seqif(ppp, (char*)in, &status);
+	input = seqif(ppp, (char*)input, &status);
 	if (status == statError)
 	    break;
-	else if (!endoflinep(ppp->cl)) {
-	    error(ppp->err, errIfSyntax);
+	input = skipwhite(ppp->cl, input);
+	if (!endoflinep(ppp->cl)) {
+	    error(errIfSyntax);
 	    break;
 	}
 	if (status == statDefined || status == statUndefined) {
 	    ppp->absorb = TRUE;
-	    ppp->stack[ppp->level] |= fOurs;
+	    ppp->stack[ppp->level] |= F_Ours;
 	    ppp->copy = status == statDefined;
 	}
 	break;
 
       case cmdElse:
-	if (ppp->level < 0 || (ppp->stack[ppp->level] & fElse)) {
-	    error(ppp->err, errDanglingElse);
+	if (ppp->level < 0 || (ppp->stack[ppp->level] & F_Else)) {
+	    error(errDanglingElse);
 	    break;
 	}
-	ppp->stack[ppp->level] |= fElse;
+	ppp->stack[ppp->level] |= F_Else;
 	if (!endoflinep(ppp->cl)) {
-	    error(ppp->err, errSyntax);
+	    error(errSyntax);
 	    break;
 	}
-	if (ppp->stack[ppp->level] & fOurs) {
+	if (ppp->stack[ppp->level] & F_Ours) {
 	    ppp->copy = !ppp->copy;
 	    ppp->absorb = TRUE;
 	    n = ppp->level;
-	    while (ppp->stack[n] & fElif) {
-		if (ppp->stack[n] & fElseModify) {
+	    while (ppp->stack[n] & F_Elif) {
+		if (ppp->stack[n] & F_ElseModify) {
 		    ppp->absorb = TRUE;
 		    break;
 		}
 		--n;
-		if (!(ppp->stack[n] & fOurs))
+		if (!(ppp->stack[n] & F_Ours))
 		    ppp->absorb = FALSE;
 	    }
 	}
 	break;
 
       case cmdElif:
-	if (ppp->level < 0 || !(ppp->stack[ppp->level] & fIf)
-			   || (ppp->stack[ppp->level] & fElse)) {
-	    error(ppp->err, errDanglingElse);
+	if (ppp->level < 0 || !(ppp->stack[ppp->level] & F_If)
+			   || (ppp->stack[ppp->level] & F_Else)) {
+	    error(errDanglingElse);
 	    break;
-	} else if (ppp->level >= maxstack - 1) {
-	    error(ppp->err, errIfsTooDeep);
+	} else if (ppp->level + 1 >= sizearray(ppp->stack)) {
+	    error(errIfsTooDeep);
 	    break;
 	}
-	ppp->stack[ppp->level] |= fElse;
-	if (ppp->stack[ppp->level] & fOurs)
+	ppp->stack[ppp->level] |= F_Else;
+	if (ppp->stack[ppp->level] & F_Ours)
 	    ppp->copy = !ppp->copy;
 	++ppp->level;
-	ppp->stack[ppp->level] = fIf | fElif | (ppp->copy ? fCopy : 0);
+	ppp->stack[ppp->level] = F_If | F_Elif | (ppp->copy ? F_Copy : 0);
 	if (!ppp->copy) {
-	    in = restofline(ppp->cl, in);
+	    input = restofline(ppp->cl, input);
 	    break;
 	}
-	in = seqif(ppp, (char*)in, &status);
+	input = seqif(ppp, (char*)input, &status);
 	if (status == statError)
 	    break;
-	else if (!endoflinep(ppp->cl)) {
-	    error(ppp->err, errIfSyntax);
+	input = skipwhite(ppp->cl, input);
+	if (!endoflinep(ppp->cl)) {
+	    error(errIfSyntax);
 	    break;
 	}
 	if (status == statUndefined) {
 	    ppp->copy = FALSE;
 	    ppp->absorb = TRUE;
-	    ppp->stack[ppp->level] |= fOurs;
+	    ppp->stack[ppp->level] |= F_Ours;
 	} else if (status == statDefined) {
 	    ppp->absorb = TRUE;
 	    n = ppp->level;
-	    while (ppp->stack[n] & fElif) {
+	    while (ppp->stack[n] & F_Elif) {
 		--n;
-		if (!(ppp->stack[n] & fOurs)) {
+		if (!(ppp->stack[n] & F_Ours)) {
 		    strcpy((char*)cmd, "else");
-		    ppp->stack[ppp->level] |= fElseModify;
+		    ppp->stack[ppp->level] |= F_ElseModify;
 		    ppp->absorb = FALSE;
 		    break;
 		}
 	    }
-	    ppp->stack[ppp->level] |= fOurs;
+	    ppp->stack[ppp->level] |= F_Ours;
 	} else {
 	    n = ppp->level;
-	    while (ppp->stack[n] & fElif) {
+	    while (ppp->stack[n] & F_Elif) {
 		--n;
-		if (!(ppp->stack[n] & fOurs)) {
+		if (!(ppp->stack[n] & F_Ours)) {
 		    n = -1;
 		    break;
 		}
 	    }
 	    if (n >= 0) {
 		memmove((char*)cmd, cmd + 2, strlen(cmd + 2) + 1);
-		ppp->stack[ppp->level] |= fIfModify;
+		ppp->stack[ppp->level] |= F_IfModify;
 	    }
 	}
 	break;
 
       case cmdEndif:
 	if (ppp->level < 0) {
-	    error(ppp->err, errDanglingEnd);
+	    error(errDanglingEnd);
 	    break;
 	}
 	if (!endoflinep(ppp->cl)) {
-	    error(ppp->err, errSyntax);
+	    error(errSyntax);
 	    break;
 	}
 	ppp->absorb = TRUE;
-	for ( ; ppp->stack[ppp->level] & fElif ; --ppp->level) {
-	    if (ppp->stack[ppp->level] & (fIfModify | fElseModify))
+	for ( ; ppp->stack[ppp->level] & F_Elif ; --ppp->level) {
+	    if (ppp->stack[ppp->level] & (F_IfModify | F_ElseModify))
 		ppp->absorb = FALSE;
 	}
 	if (ppp->absorb)
-	    ppp->absorb = ppp->stack[ppp->level] & fOurs;
-	ppp->copy = ppp->stack[ppp->level] & fCopy;
+	    ppp->absorb = ppp->stack[ppp->level] & F_Ours;
+	ppp->copy = ppp->stack[ppp->level] & F_Copy;
 	--ppp->level;
 	break;
 
-      case cmdBad:
-	break;
-
       default:
-	in = restofline(ppp->cl, in);
+	input = restofline(ppp->cl, input);
 	break;
     }
 
     if (ppp->absorb && incomment != ccommentp(ppp->cl))
-	error(ppp->err, errBrokenComment);
+	error(errBrokenComment);
 }
 
-
-void initppproc(ppproc *ppp, strset *defs, strset *undefs, errhandler *err)
+/* Reads in one line of source code and run it through the partial
+ * preprocessor. The return value is zero if the file has reached the
+ * end or if the file can't be read.
+ */
+static int readline(struct ppproc *ppp, FILE *infile)
 {
-    ppp->cl = xmalloc(sizeof *ppp->cl);
-    ppp->defs = defs;
-    ppp->undefs = undefs;
-    ppp->stack = xmalloc(maxstack * sizeof *ppp->stack);
-    ppp->line = NULL;
-    ppp->linesize = 0;
-    ppp->err = err;
-}
+    int size;
+    int prev, ch;
 
-void closeppproc(ppproc *ppp)
-{
-    free(ppp->cl);
-    ppp->cl = NULL;
-    free(ppp->stack);
-    ppp->stack = NULL;
-    free(ppp->line);
-    ppp->line = NULL;
-}
-
-
-void beginfile(ppproc *ppp)
-{
-    initclexer(ppp->cl, ppp->err);
-    free(ppp->line);
-    ppp->line = NULL;
-    ppp->linesize = 0;
-    ppp->level = -1;
-    ppp->copy = TRUE;
-    ppp->absorb = FALSE;
-}
-
-void endfile(ppproc *ppp)
-{
-    endstream(ppp->cl);
-    if (ppp->level != -1)
-	error(ppp->err, errOpenIf, ppp->level + 1);
-
-    free(ppp->line);
-    ppp->line = NULL;
-    ppp->linesize = 0;
-}
-
-
-int readline(ppproc *ppp, FILE *infile)
-{
-    fpos_t	pos;
-    int		size;
-    int		prev = EOF;
-    int		ch;
-
-    fgetpos(infile, &pos);
     ch = fgetc(infile);
+    if (ch == EOF)
+	return 0;
+    prev = EOF;
     for (size = 0 ; ch != EOF ; ++size) {
 	if (ch == '\n' && prev != '\\')
 	    break;
+	if (size + 1 == ppp->linealloc) {
+	    ppp->linealloc *= 2;
+	    ppp->line = reallocate(ppp->line, ppp->linealloc);
+	}
+	ppp->line[size] = ch;
 	prev = ch;
 	ch = fgetc(infile);
     }
-    if (!size && ch == EOF) {
-	ppp->line = NULL;
+    if (ferror(infile)) {
+	error(errFileIO);
 	return 0;
     }
-
-    fsetpos(infile, &pos);
-    if (size >= ppp->linesize) {
-	ppp->linesize = size + 1;
-	ppp->line = xrealloc(ppp->line, ppp->linesize);
-    }
-    if (size) {
-	if (fread(ppp->line, size, 1, infile) != 1) {
-	    error(ppp->err, errFileIO);
-	    return -1;
-	}
-    }
     ppp->endline = ch != EOF;
-    if (ppp->endline)
-	fgetc(infile);
     ppp->line[size] = '\0';
+
     seq(ppp);
 
     nextline(ppp->cl, NULL);
-    return size;
+    return 1;
 }
 
-int writeline(ppproc *ppp, FILE* outfile)
+/* Outputs the partially preprocessed line to the output file,
+ * assuming anything is left to be output. The return value is false
+ * if an error occurs.
+ */
+static int writeline(struct ppproc *ppp, FILE *outfile)
 {
-    int	size;
+    size_t size;
 
     if (!ppp->line)
-	return 0;
+	return 1;
     if (!ppp->copy || ppp->absorb)
-	return 0;
+	return 1;
 
     size = strlen(ppp->line);
     if (size) {
 	if (fwrite(ppp->line, size, 1, outfile) != 1) {
-	    seterrorfile(ppp->err, NULL);
-	    error(ppp->err, errFileIO);
-	    return -1;
+	    seterrorfile(NULL);
+	    error(errFileIO);
+	    return 0;
 	}
     }
     if (ppp->endline)
 	fputc('\n', outfile);
     ppp->endline = FALSE;
-    return size;
+    return 1;
 }
 
-void prepreprocess(ppproc *ppp, FILE *infile, FILE *outfile)
+/* Increments the line number count, checking for embedded line break
+ * characters.
+ */
+static void advanceline(char const *line)
+{
+    char const *p;
+
+    for (p = line - 1 ; p ; p = strchr(p + 1, '\n'))
+	nexterrorline();
+}
+
+/* Partially preprocesses the contents of infile to outfile.
+ */
+void partialpreprocess(struct ppproc *ppp, void *infile, void *outfile)
 {
     beginfile(ppp);
-    seterrorline(ppp->err, 1);
-    while (!feof(infile) && !ferror(infile)) {
-	readline(ppp, infile);
-	writeline(ppp, outfile);
-	nexterrorline(ppp->err);
-    }
-    seterrorline(ppp->err, 0);
+    seterrorline(1);
+    while (readline(ppp, infile) && writeline(ppp, outfile))
+	advanceline(ppp->line);
+    seterrorline(0);
     endfile(ppp);
 }

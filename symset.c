@@ -1,130 +1,105 @@
-#include	<string.h>
-#include	<stdlib.h>
-#include	<ctype.h>
-#include	"main.h"
-#include	"strset.h"
+/* symset.c: Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>
+ * License GPLv2+: GNU GPL version 2 or later.
+ * This is free software; you are free to change and redistribute it.
+ * There is NO WARRANTY, to the extent permitted by law.
+ */
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include "gen.h"
+#include "symset.h"
 
-static const size_t strsetchunk = 1024;
+/*
+ * The obvious data structure for an unordered collection of
+ * preprocessor symbols is a hash table. However, given that the vast
+ * majority of symbol sets will have a size of zero or one, and will
+ * almost never exceed three, and that symbol lookups are not inside
+ * the program's inner loops, even hash tables are overkill here.
+ */
 
-void initstrset(strset *set)
+/* A preprocessor symbol.
+ */
+struct sym {
+    char const *id;		/* the symbol's name */
+    long	value;		/* the symbol's value */
+};
+
+/* An unordered collection of symbols.
+ */
+struct symset {
+    struct sym *syms;		/* an array of symbols */
+    int		allocated;	/* how many entries are allocated */
+    int		size;		/* how many entries are currently stored */
+};
+
+/* Allocate a new symset.
+ */
+struct symset *initsymset(void)
 {
-    set->start = NULL;
-    set->end = NULL;
-    set->allocated = 0;
+    struct symset *set;
+
+    set = allocate(sizeof *set);
+    set->syms = allocate(sizeof *set->syms);
+    set->allocated = 1;
+    set->size = 0;
+    return set;
 }
 
-void copystrset(strset *dest, strset const *src)
+/* Deallocate an symset.
+ */
+void freesymset(struct symset *set)
 {
-    size_t n;
-
-    if (!src || !src->allocated || !src->start) {
-	initstrset(dest);
-	return;
+    if (set) {
+	deallocate(set->syms);
+	deallocate(set);
     }
-    dest->start = xmalloc(src->allocated);
-    dest->allocated = src->allocated;
-    n = src->end - src->start;
-    dest->end = dest->start + n;
-    memcpy(dest->start, src->start, n);
 }
 
-void freestrset(strset *set)
+/* Append a symbol to a set.
+ */
+void addsymboltoset(struct symset *set, char const *id, long value)
 {
-    free(set->start);
-    initstrset(set);
+    if (set->size == set->allocated) {
+	set->allocated *= 2;
+	set->syms = reallocate(set->syms,
+			       set->allocated * sizeof *set->syms);
+    }
+    set->syms[set->size].id = id;
+    set->syms[set->size].value = value;
+    ++set->size;
 }
 
-
-static int symcmp(char const *r, char const *s)
+/* A string comparison function that treats any non-identifier
+ * character as a delimiter.
+ */
+static int idcmp(char const *a, char const *b)
 {
+    int i;
+
+    i = 0;
     for (;;) {
-	if (!_issym(*r))
-	    return !_issym(*s) ? 0 : -1;
-	else if (!_issym(*s))
+	if (!_issym(a[i]))
+	    return _issym(b[i]) ? -1 : 0;
+	else if (!_issym(b[i]))
 	    return +1;
-	else if (*r != *s)
-	    return (int)*r - (int)*s;
-	++r;
-	++s;
+	else if (a[i] != b[i])
+	    return a[i] - b[i];
+	++i;
     }
 }
 
-int findstringinset(strset *set, char const *string)
+/* Retrieve the value of a symbol.
+ */
+int findsymbolinset(struct symset const *set, char const *id, long *value)
 {
-    char const *el;
+    int i;
 
-    if (!string || !*string)
-	return FALSE;
-    for (el = set->start ; el < set->end ; el += strlen(el) + 1)
-	if (!strcmp(el, string))
+    for (i = 0 ; i < set->size ; ++i) {
+	if (!idcmp(set->syms[i].id, id)) {
+	    if (value)
+		*value = set->syms[i].value;
 	    return TRUE;
-    return FALSE;
-}
-
-int findsymbolinset(strset *set, char const *string)
-{
-    char const *el;
-
-    if (!string || !*string)
-	return FALSE;
-    for (el = set->start ; el < set->end ; el += strlen(el) + 1)
-	if (!symcmp(el, string))
-	    return TRUE;
-    return FALSE;
-}
-
-int addstringtoset(strset *set, char const *string)
-{
-    char       *endpos;
-    size_t	size, newsize;
-
-    if (!string || !*string)
-	return FALSE;
-    if (findstringinset(set, string))
-	return TRUE;
-
-    size = strlen(string) + 1;
-    endpos = set->end;
-    set->end += size;
-    newsize = set->end - set->start;
-    if (newsize > set->allocated) {
-	set->allocated += strsetchunk;
-	set->start = xrealloc(set->start, set->allocated);
-	set->end = set->start + newsize;
-	endpos = set->end - size;
-    }
-
-    memcpy(endpos, string, size);
-    return TRUE;
-}
-
-int delstringfromset(strset *set, char const *string)
-{
-    char       *el;
-    size_t	size;
-    int		found;
-
-    if (!string || !*string)
-	return FALSE;
-
-    found = FALSE;
-    if (string >= set->start && string < set->end) {
-	el = (char*)string;
-	size = strlen(el) + 1;
-	found = TRUE;
-    } else {
-	for (el = set->start ; el < set->end ; el += size) {
-	    size = strlen(el) + 1;
-	    if (!memcmp(el, string, size)) {
-		found = TRUE;
-		break;
-	    }
 	}
     }
-
-    if (found) {
-	set->end -= size;
-	memmove(el, el + size, set->end - el);
-    }
-    return found;
+    return FALSE;
 }

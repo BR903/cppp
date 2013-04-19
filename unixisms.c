@@ -1,33 +1,46 @@
-#include	<unistd.h>
-#include	<getopt.h>
-#include	<sys/stat.h>
-#include	"unixisms.h"
+/* unixisms.c: Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>
+ * License GPLv2+: GNU GPL version 2 or later.
+ * This is free software; you are free to change and redistribute it.
+ * There is NO WARRANTY, to the extent permitted by law.
+ */
+#include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include "unixisms.h"
 
-void currentdirname(char *name)
+/* File descriptor of the saved directory.
+ */
+static int currentdir = -1;
+
+/* Changes the current directory.
+ */
+int changedir(char const *name)
 {
-    getcwd(name, MAX_DIRNAME_SIZE);
+    return chdir(name) == 0;
 }
 
-void changedir(char const *name)
+/* Opens a file descriptor on the current directory.
+ */
+int savedir(void)
 {
-    chdir(name);
+    currentdir = open(".", O_RDONLY);
+    return currentdir >= 0;
 }
 
-int getnextoption(int argc, char *argv[], char const *options)
+/* Uses the saved file description to change the directory back.
+ */
+int restoredir(void)
 {
-    return getopt(argc, argv, options);
+    if (fchdir(currentdir) != 0)
+	return 0;
+    close(currentdir);
+    currentdir = -1;
+    return 1;
 }
 
-char *optionarg(void)
-{
-    return optarg;
-}
-
-int optionindex(void)
-{
-    return optind;
-}
-
+/* Returns true if the filename is a directory.
+ */
 int fileisdir(char const *name)
 {
     struct stat s;
@@ -37,13 +50,12 @@ int fileisdir(char const *name)
     return S_ISDIR(s.st_mode);
 }
 
-char *getfilename(char const *name)
+/* Returns a pointer to the filename minus any leading directories.
+ */
+char const *getbasefilename(char const *name)
 {
-    char const *r, *s;
+    char const *r;
 
-    r = name;
-    for (s = name + 1 ; *s ; ++s)
-	if (s[-1] == '/')
-	    r = s;
-    return (char*)r;
+    r = strrchr(name, '/');
+    return r && r[1] ? r + 1 : name;
 }

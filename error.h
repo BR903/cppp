@@ -1,33 +1,65 @@
+/* error.h: Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>
+ * License GPLv2+: GNU GPL version 2 or later.
+ * This is free software; you are free to change and redistribute it.
+ * There is NO WARRANTY, to the extent permitted by law.
+ */
 #ifndef _error_h_
 #define _error_h_
 
-enum errors
+/*
+ * This module provides basic reporting and tracking of errors that
+ * occur while processing input files.
+ */
+
+/* The complete list of error message types.
+ */
+enum errortype
 {
     errNone = 0,
-    errLowMem, errSyntax, errFileIO,
-    errBadCharLiteral, errOpenCharLiteral, errOpenStringLiteral,
-    errOpenComment, errBrokenComment,
-    errDanglingElse, errDanglingEnd, errOpenIf,
-    errIfsTooDeep, errOpenParenthesis, errMissingOperand,
-    errEmptyIf, errIfSyntax, errDefinedSyntax, errBadPreprocessor,
+    errSyntax,			/* general syntax error */
+    errFileIO,			/* file I/O failure (see errno) */
+    errBadCharLiteral,		/* invalid character sequence in quotes */
+    errOpenCharLiteral,		/* unclosed single quote */
+    errOpenStringLiteral,	/* unclosed double quote */
+    errOpenComment,		/* unclosed multi-line comment */
+    errBrokenComment,		/* comment spanning removed line */
+    errDanglingElse,		/* unmatched #else found */
+    errDanglingEnd,		/* unmatched #end found */
+    errOpenIf,			/* unclosed #if */
+    errIfsTooDeep,		/* way too many nested #ifs */
+    errOpenParenthesis,		/* unclosed left parenthesis */
+    errMissingOperand,		/* operand expected to follow expression */
+    errZeroDiv,			/* division by zero in an expression */
+    errEmptyIf,			/* missing #if parameter */
+    errIfSyntax,		/* general syntax error inside #if parameter */
+    errDefinedSyntax,		/* general syntax error in defined operand */
     errCount
 };
 
-typedef	struct errhandler {
-    char const	       *file;
-    unsigned long	lineno;
-    int			count;
-    int			err;
-} errhandler;
+/* Displays a formatted error message to the user.
+ */
+extern void error(enum errortype type);
 
-extern void initerrhandler(errhandler *e);
-extern void reseterrhandler(errhandler *e);
-extern void seterrorfile(errhandler *e, char const *file);
-extern void seterrorline(errhandler *e, unsigned long lineno);
-extern void nexterrorline(errhandler *e);
-extern int getlasterror(errhandler *e);
-extern int geterrormark(errhandler *e);
-extern int errorsincemark(errhandler *e, int mark);
-extern void error(errhandler *e, int err, ...);
+/* Sets the input filename to display in error messages.
+ */
+extern void seterrorfile(char const *file);
+
+/* Sets the current line number for the input filename, to be
+ * displayed when errors are reported.
+ */
+extern void seterrorline(unsigned long lineno);
+
+/* Increments the current line number.
+ */
+extern void nexterrorline(void);
+
+/* Returns the number of errors that have occurred so far.
+ */
+extern int geterrormark(void);
+
+/* Returns true if any new errors have occurred since the given mark
+ * was retrieved.
+ */
+extern int errorsincemark(int mark);
 
 #endif
