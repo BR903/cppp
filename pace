@@ -1,0 +1,14 @@
+#!/bin/bash
+binary=${1:-./cppp}
+rm -f ./tests/pace.out
+for f in -Dfoo -Dbar -Dbaz -Ufoo -Ubar -Ubaz \
+        "-Dfoo -Dbar" "-Dfoo -Dbaz" "-Dbar -Dbaz" "-Dfoo -Dbar -Dbaz" \
+	"-Ufoo -Ubar" "-Ufoo -Ubaz" "-Ubar -Ubaz" "-Ufoo -Ubar -Ubaz" \
+	"-Dfoo -Ubar" "-Dfoo -Ubaz" "-Dbar -Ubaz" "-Dfoo -Ubar -Ubaz" \
+	"-Ufoo -Dbar" "-Ufoo -Dbaz" "-Ubar -Dbaz" "-Ufoo -Dbar -Dbaz" \
+	"-Dfoo -Ubar -Dbaz" "-Ufoo -Ubar -Dbaz" \
+	"-Ufoo -Dbar -Ubaz" "-Dfoo -Dbar -Ubaz" ; do
+  echo '/*' $f '*/' >> ./tests/pace.out
+  $binary $f ./tests/x.c >> ./tests/pace.out
+done
+diff ./tests/pace.check ./tests/pace.out
