@@ -121,11 +121,8 @@ static char const *seqif(struct ppproc *ppp, char *ifexp, enum status *status)
 	goto quit;
     }
 
-    n = 0;
-    if (ppp->defs)
-	n += markdefined(tree, ppp->defs, TRUE);
-    if (ppp->undefs)
-	n += markdefined(tree, ppp->undefs, FALSE);
+    n = markdefined(tree, ppp->defs, TRUE) +
+	markdefined(tree, ppp->undefs, FALSE);
     if (n) {
 	*status = evaltree(tree, &defined) ? statDefined : statUndefined;
 	if (!defined) {
@@ -188,9 +185,9 @@ static void seq(struct ppproc *ppp)
 	    error(errEmptyIf);
 	    break;
 	}
-	if (ppp->defs && findsymbolinset(ppp->defs, input, NULL))
+	if (findsymbolinset(ppp->defs, input, NULL))
 	    n = statDefined;
-	else if (ppp->undefs && findsymbolinset(ppp->undefs, input, NULL))
+	else if (findsymbolinset(ppp->undefs, input, NULL))
 	    n = statUndefined;
 	else
 	    n = statUnaffected;
@@ -326,7 +323,7 @@ static void seq(struct ppproc *ppp)
 	}
 	if (!endoflinep(ppp->cl)) {
 	    error(errSyntax);
-	    break;
+	    input = restofline(ppp->cl, input);
 	}
 	ppp->absorb = TRUE;
 	for ( ; ppp->stack[ppp->level] & F_Elif ; --ppp->level) {

@@ -94,11 +94,13 @@ int findsymbolinset(struct symset const *set, char const *id, long *value)
 {
     int i;
 
-    for (i = 0 ; i < set->size ; ++i) {
-	if (!idcmp(set->syms[i].id, id)) {
-	    if (value)
-		*value = set->syms[i].value;
-	    return TRUE;
+    if (set) {
+	for (i = 0 ; i < set->size ; ++i) {
+	    if (!idcmp(set->syms[i].id, id)) {
+		if (value)
+		    *value = set->syms[i].value;
+		return TRUE;
+	    }
 	}
     }
     return FALSE;
