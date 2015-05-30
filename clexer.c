@@ -296,15 +296,6 @@ char const *skipwhite(struct clexer *cl, char const *input)
     return input;
 }
 
-/* Advances forward to the next whitespace character.
- */
-char const *skiptowhite(struct clexer *cl, char const *input)
-{
-    while (!whitespacep(cl) && !endoflinep(cl))
-	input = nextchar(cl, input);
-    return input;
-}
-
 /* Advances to the end of the current line.
  */
 char const *restofline(struct clexer *cl, char const *input)
@@ -334,9 +325,9 @@ char const *getpreprocessorcmd(struct clexer *cl, char const *line,
 	return begin;
     }
 
-    end = skiptowhite(cl, begin);
-    *cmdid = cmdOther;
+    for (end = begin ; _issym(*end) ; end = nextchar(cl, end)) ;
     size = (size_t)(end - begin);
+    *cmdid = cmdOther;
     for (n = 0 ; n < sizearray(ppstatements) ; ++n) {
 	if (size == strlen(ppstatements[n].statement) &&
 			!memcmp(ppstatements[n].statement, begin, size)) {
@@ -346,23 +337,6 @@ char const *getpreprocessorcmd(struct clexer *cl, char const *line,
     }
 
     return skipwhite(cl, end);
-}
-
-/* Advances past the identifier that the lexer is currently pointing
- * to, and copies it to buffer.
- */
-char const *getidentifier(struct clexer *cl, char const *input, char* buffer)
-{
-    char const *startpos;
-    size_t n;
-
-    startpos = input;
-    while (_issym(*input))
-	input = nextchar(cl, input);
-    n = (size_t)(input - startpos);
-    memcpy(buffer, startpos, n);
-    buffer[n] = '\0';
-    return skipwhite(cl, input);
 }
 
 /* Starts the lexer on a new line of input.

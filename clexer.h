@@ -72,10 +72,6 @@ extern char const *nextchars(struct clexer *cl, char const *input, int skip);
  */
 extern char const *restofline(struct clexer *cl, char const *input);
 
-/* Examines characters tokens until a whitespace character is found.
- */
-extern char const *skiptowhite(struct clexer *cl, char const *input);
-
 /* Examines characters tokens until a non-whitespace character is
  * found.
  */
@@ -90,12 +86,6 @@ extern char const *nextline(struct clexer *cl, char const *input);
 /* Mark the end of the current input file.
  */
 extern void endstream(struct clexer *cl);
-
-/* Examines character tokens until the end of an identifier is
- * found. The identifier itself is returned via buffer.
- */
-extern char const *getidentifier(struct clexer *cl, char const *input,
-				 char *buffer);
 
 /* Examines character tokens until the end of the preprocessor
  * statement is found. The value identifying the preprocessor statement
