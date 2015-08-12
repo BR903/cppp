@@ -105,3 +105,21 @@ int findsymbolinset(struct symset const *set, char const *id, long *value)
     }
     return FALSE;
 }
+
+/* Remove a symbol from a set.
+ */
+int removesymbolfromset(struct symset *set, char const *id)
+{
+    int i;
+
+    if (set) {
+	for (i = 0 ; i < set->size ; ++i) {
+	    if (!idcmp(set->syms[i].id, id)) {
+		set->syms[i] = set->syms[set->size - 1];
+		--set->size;
+		return TRUE;
+	    }
+	}
+    }
+    return FALSE;
+}

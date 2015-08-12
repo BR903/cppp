@@ -34,4 +34,9 @@ extern void addsymboltoset(struct symset *set, char const *id, long value);
 extern int findsymbolinset(struct symset const *set,
 			   char const *id, long *value);
 
+/* Removes a symbol from the set. The return value is false if the
+ * symbol was not a member of the set.
+ */
+extern int removesymbolfromset(struct symset *set, char const *id);
+
 #endif

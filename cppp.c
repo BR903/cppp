@@ -38,6 +38,18 @@ static char const *const vourzhon =
     "This is free software; you are free to change and redistribute it.\n"
     "There is NO WARRANTY, to the extent permitted by law.\n";
 
+/* Display a warning message regarding command-line syntax.
+ */
+static void warn(char const *fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    fputs("cppp: ", stderr);
+    vfprintf(stderr, fmt, args);
+    fputs("\n", stderr);
+}
+
 /* Display an error message regarding command-line syntax and exit.
  */
 static void fail(char const *fmt, ...)
@@ -100,8 +112,10 @@ static int readcmdline(int argc, char *argv[],
 	    } else {
 		value = 1;
 	    }
-	    if (findsymbolinset(undefs, arg, NULL))
-		fail("symbol %s cannot be both defined and undefined", arg);
+	    if (removesymbolfromset(undefs, arg))
+		warn("defining undefined symbol %s", arg);
+	    else if (removesymbolfromset(defs, arg))
+		warn("defining already-defined symbol %s", arg);
 	    addsymboltoset(defs, arg, value);
 	} else if (argv[i][1] == 'U') {
 	    arg = argv[i] + 2;
@@ -111,8 +125,10 @@ static int readcmdline(int argc, char *argv[],
 		else
 		    fail("missing argument to -U");
 	    }
-	    if (findsymbolinset(defs, arg, NULL))
-		fail("symbol %s cannot be both defined and undefined", arg);
+	    if (removesymbolfromset(defs, arg))
+		warn("undefining defined symbol %s", arg);
+	    else if (removesymbolfromset(undefs, arg))
+		warn("undefining already-undefined symbol %s", arg);
 	    addsymboltoset(undefs, arg, 0L);
 	} else {
 	    fail("invalid option: %s", argv[i]);
