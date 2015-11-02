@@ -352,21 +352,30 @@ static void seq(struct ppproc *ppp)
 static int readline(struct ppproc *ppp, FILE *infile)
 {
     int size;
-    int prev, ch;
+    int prev2, prev1, ch;
 
     ch = fgetc(infile);
     if (ch == EOF)
 	return 0;
-    prev = EOF;
+    prev2 = EOF;
+    prev1 = EOF;
     for (size = 0 ; ch != EOF ; ++size) {
-	if (ch == '\n' && prev != '\\')
-	    break;
+	if (ch == '\n') {
+	    if ((prev2 == '\\') && (prev1 == '\r')) {
+		/* continue with line */
+	    } else if (prev1 == '\\') {
+		/* continue with line */
+	    } else {
+		break; /* finished line */
+	    }
+	}
 	if (size + 1 == ppp->linealloc) {
 	    ppp->linealloc *= 2;
 	    ppp->line = reallocate(ppp->line, ppp->linealloc);
 	}
 	ppp->line[size] = ch;
-	prev = ch;
+	prev2 = prev1;
+	prev1 = ch;
 	ch = fgetc(infile);
     }
     if (ferror(infile)) {
