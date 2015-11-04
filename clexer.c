@@ -184,9 +184,16 @@ char const *examinechar(struct clexer *cl, char const *input)
 	return input;
     }
     cl->charcount = 1;
-    while (in[0] == '\\' && in[1] == '\n') {
-	in += 2;
-	cl->charcount += 2;
+    while (in[0] == '\\') {
+	if (in[1] == '\n') {
+	    in += 2;
+	    cl->charcount += 2;
+	} else if (in[1] == '\r' && in[2] == '\n') {
+	    in += 3;
+	    cl->charcount += 3;
+	} else {
+	    break;
+	}
     }
     if (!*in || *in == '\n') {
 	cl->state |= F_EndOfLine;

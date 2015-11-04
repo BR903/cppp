@@ -347,7 +347,8 @@ static void seq(struct ppproc *ppp)
 
 /* Reads in one line of source code and run it through the partial
  * preprocessor. The return value is zero if the file has reached the
- * end or if the file can't be read.
+ * end or if the file can't be read. (Note that the function accepts
+ * "\r\n" as being equivalent to "\n".)
  */
 static int readline(struct ppproc *ppp, FILE *infile)
 {
@@ -359,9 +360,19 @@ static int readline(struct ppproc *ppp, FILE *infile)
 	return 0;
     prev = EOF;
     for (size = 0 ; ch != EOF ; ++size) {
+	if (ch == '\r') {
+	    ch = fgetc(infile);
+	    if (ch == '\n') {
+		ppp->line[size] = '\r';
+		++size;
+	    } else {
+		ungetc(ch, infile);
+		ch = '\r';
+	    }
+	}
 	if (ch == '\n' && prev != '\\')
 	    break;
-	if (size + 1 == ppp->linealloc) {
+	if (size + 2 >= ppp->linealloc) {
 	    ppp->linealloc *= 2;
 	    ppp->line = reallocate(ppp->line, ppp->linealloc);
 	}
