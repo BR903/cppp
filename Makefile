@@ -3,7 +3,7 @@
 # Where to install
 #
 prefix = /usr/local
-version = 2.4
+version = 2.6
 
 CC = gcc
 CFLAGS = -Wall -Wextra -O2
