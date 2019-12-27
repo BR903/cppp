@@ -53,9 +53,17 @@ all the intervening years since the time of its original creation). I
 offer it solely as a tool that might save you from a mind-numbing
 chore, but not as something to learn from.
 
+That said, cppp is free software, so you can redistribute it and/or
+modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of the
+License, or (at your option) any later version. This program is
+distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License,
+included in this distribution in the file COPYING, for more details.
+
 cppp website: <http://www.muppetlabs.com/~breadbox/software/cppp.html>.
 
 Brian Raiter
 breadbox@muppetlabs.com
 June, 2011
-
