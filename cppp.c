@@ -21,7 +21,7 @@ static char const *const yowzitch =
     "Usage: cppp [OPTIONS] [SOURCE ... [DEST]]\n"
     "Partially preprocesses C/C++ files, with only specific preprocessor\n"
     "symbols being defined (and/or undefined).\n\n"
-    "      -D SYMBOL[=VALUE]   Preprocess SYMBOL as defined (to VALUE).\n"
+    "      -D SYMBOL[=NUMBER]  Preprocess SYMBOL as defined [to NUMBER].\n"
     "      -U SYMBOL           Preprocess SYMBOL as undefined.\n"
     "      --help              Display this help and exit.\n"
     "      --version           Display version information and exit.\n\n"

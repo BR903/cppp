@@ -186,20 +186,23 @@ static void seq(struct ppproc *ppp)
 	    break;
 	}
 	if (findsymbolinset(ppp->defs, input, NULL))
-	    n = statDefined;
+	    status = statDefined;
 	else if (findsymbolinset(ppp->undefs, input, NULL))
-	    n = statUndefined;
+	    status = statUndefined;
 	else
-	    n = statUnaffected;
+	    status = statUnaffected;
 	input = skipwhite(ppp->cl, nextchars(ppp->cl, input, size));
 	if (!endoflinep(ppp->cl)) {
 	    error(errSyntax);
 	    break;
 	}
-	if (n != statUnaffected) {
+	if (status != statUnaffected) {
 	    ppp->absorb = TRUE;
 	    ppp->stack[ppp->level] |= F_Ours;
-	    ppp->copy = n == (id == cmdIfdef ? statDefined : statUndefined);
+	    if (id == cmdIfdef)
+		ppp->copy = status == statDefined;
+	    else
+		ppp->copy = status == statUndefined;
 	}
 	break;
 

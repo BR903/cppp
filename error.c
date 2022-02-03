@@ -136,6 +136,7 @@ void error(enum errortype type)
 	break;
       case errDefinedSyntax:
 	fputs("bad syntax in defined operator.", stderr);
+	break;
       case errBrokenComment:
 	fputs("comment spans deleted line.", stderr);
 	break;
