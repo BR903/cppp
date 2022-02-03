@@ -21,8 +21,11 @@ struct clexer;
 enum ppcmd
 {
     cmdNone = 0,
-    cmdDefine, cmdElif, cmdElse, cmdEndif,
-    cmdIf, cmdIfdef, cmdIfndef, cmdUndef,
+    cmdDefine,
+    cmdElif, cmdElifdef, cmdElifndef, cmdElse,
+    cmdEndif, cmdIf,
+    cmdIfdef, cmdIfndef,
+    cmdUndef,
     cmdOther
 };
 

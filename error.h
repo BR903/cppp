@@ -27,6 +27,7 @@ enum errortype
     errDanglingEnd,		/* unmatched #end found */
     errOpenIf,			/* unclosed #if */
     errElifWithIfdef,		/* #elif following #ifdef/#ifndef */
+    errElifdefWithIf,		/* #elifdef/#elifndef following #if */
     errIfsTooDeep,		/* way too many nested #ifs */
     errOpenParenthesis,		/* unclosed left parenthesis */
     errMissingOperand,		/* operand expected to follow expression */

@@ -258,6 +258,91 @@ static void seq(struct ppproc *ppp)
 	}
 	break;
 
+      case cmdElifdef:
+      case cmdElifndef:
+	if (ppp->level < 0 || (ppp->stack[ppp->level] & F_Else)) {
+	    error(errDanglingElse);
+	    break;
+	} else if (ppp->level + 1 >= sizearray(ppp->stack)) {
+	    error(errIfsTooDeep);
+	    break;
+	}
+	if (!(ppp->stack[ppp->level] & F_Ifdef))
+	    error(errElifdefWithIf);
+	ppp->stack[ppp->level] |= F_Else;
+	if (ppp->stack[ppp->level] & F_Ours) {
+	    ppp->copy = !ppp->copy;
+	    ppp->absorb = TRUE;
+	    n = ppp->level;
+	    while (ppp->stack[n] & F_Elif) {
+		if (ppp->stack[n] & F_ElseModify) {
+		    ppp->absorb = TRUE;
+		    break;
+		}
+		--n;
+		if (!(ppp->stack[n] & F_Ours))
+		    ppp->absorb = FALSE;
+	    }
+	}
+	++ppp->level;
+	ppp->stack[ppp->level] = F_If | F_Elif | F_Ifdef;
+	if (!ppp->copy) {
+	    input = restofline(ppp->cl, input);
+	    break;
+	}
+	ppp->stack[ppp->level] |= F_Copy;
+	size = getidentifierlength(input);
+	if (!size) {
+	    error(errEmptyIf);
+	    break;
+	}
+	if (findsymbolinset(ppp->defs, input, NULL))
+	    status = statDefined;
+	else if (findsymbolinset(ppp->undefs, input, NULL))
+	    status = statUndefined;
+	else
+	    status = statUnaffected;
+	input = skipwhite(ppp->cl, nextchars(ppp->cl, input, size));
+	if (!endoflinep(ppp->cl)) {
+	    error(errSyntax);
+	    break;
+	}
+	if (status == statUnaffected) {
+	    ppp->absorb = FALSE;
+	    n = ppp->level;
+	    while (ppp->stack[n] & F_Elif) {
+		--n;
+		if (!(ppp->stack[n] & F_Ours)) {
+		    n = -1;
+		    break;
+		}
+	    }
+	    if (n >= 0) {
+		memmove((char*)cmd, cmd + 2, strlen(cmd + 2) + 1);
+		ppp->stack[ppp->level] |= F_IfModify;
+	    }
+	} else {
+	    if (id == cmdElifdef)
+		ppp->copy = status == statDefined;
+	    else
+		ppp->copy = status == statUndefined;
+	    ppp->absorb = TRUE;
+	    if (ppp->copy) {
+		n = ppp->level;
+		while (ppp->stack[n] & F_Elif) {
+		    --n;
+		    if (!(ppp->stack[n] & F_Ours)) {
+			strcpy((char*)cmd, "else");
+			ppp->stack[ppp->level] |= F_ElseModify;
+			ppp->absorb = FALSE;
+			break;
+		    }
+		}
+	    }
+	    ppp->stack[ppp->level] |= F_Ours;
+	}
+	break;
+
       case cmdElif:
 	if (ppp->level < 0 || !(ppp->stack[ppp->level] & F_If)
 			   || (ppp->stack[ppp->level] & F_Else)) {

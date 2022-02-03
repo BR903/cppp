@@ -32,7 +32,7 @@ static char const *const yowzitch =
 /* Version identifier.
  */
 static char const *const vourzhon =
-    "cppp: version 2.6\n"
+    "cppp: version 2.7\n"
     "Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>\n"
     "License GPLv2+: GNU GPL version 2 or later.\n"
     "This is free software; you are free to change and redistribute it.\n"

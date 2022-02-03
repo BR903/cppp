@@ -107,6 +107,9 @@ void error(enum errortype type)
       case errElifWithIfdef:
 	fputs("#elif matched with #ifdef/#ifndef.", stderr);
 	break;
+      case errElifdefWithIf:
+	fputs("#elifdef/#elifndef matched with #if.", stderr);
+	break;
       case errBadCharLiteral:
 	fputs("bad character literal.", stderr);
 	break;

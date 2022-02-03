@@ -43,14 +43,16 @@ struct ppstatement {
 };
 
 static struct ppstatement const ppstatements[] = {
-    { "define", cmdDefine },
-    { "elif",   cmdElif   },
-    { "else",   cmdElse   },
-    { "endif",  cmdEndif  },
-    { "if",     cmdIf     },
-    { "ifdef",  cmdIfdef  },
-    { "ifndef", cmdIfndef },
-    { "undef",  cmdUndef  }
+    { "define",   cmdDefine   },
+    { "elif",     cmdElif     },
+    { "elifdef",  cmdElifdef  },
+    { "elifndef", cmdElifndef },
+    { "else",     cmdElse     },
+    { "endif",    cmdEndif    },
+    { "if",       cmdIf       },
+    { "ifdef",    cmdIfdef    },
+    { "ifndef",   cmdIfndef   },
+    { "undef",    cmdUndef    }
 };
 
 
