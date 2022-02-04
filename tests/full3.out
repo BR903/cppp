@@ -1,0 +1,163 @@
+/* -Dfoo */
+one
+four
+#ifndef bar
+five
+#elifdef baz
+six
+#endif
+/* -Dbar */
+#ifdef foo
+one
+#else
+two
+#endif
+#ifdef foo
+four
+#ifdef baz
+six
+#endif
+#endif
+/* -Dbaz */
+#ifdef foo
+one
+#elifdef bar
+two
+#endif
+#ifdef foo
+four
+#ifndef bar
+five
+#else
+six
+#endif
+#endif
+/* -Ufoo */
+#ifdef bar
+two
+#elifndef baz
+three
+#endif
+/* -Ubar */
+#ifdef foo
+one
+#elifndef baz
+three
+#endif
+#ifdef foo
+four
+five
+#endif
+/* -Ubaz */
+#ifdef foo
+one
+#elifdef bar
+two
+#else
+three
+#endif
+#ifdef foo
+four
+#ifndef bar
+five
+#endif
+#endif
+/* -Dfoo -Dbar */
+one
+four
+#ifdef baz
+six
+#endif
+/* -Dfoo -Dbaz */
+one
+four
+#ifndef bar
+five
+#else
+six
+#endif
+/* -Dbar -Dbaz */
+#ifdef foo
+one
+#else
+two
+#endif
+#ifdef foo
+four
+six
+#endif
+/* -Dfoo -Dbar -Dbaz */
+one
+four
+six
+/* -Ufoo -Ubar */
+#ifndef baz
+three
+#endif
+/* -Ufoo -Ubaz */
+#ifdef bar
+two
+#else
+three
+#endif
+/* -Ubar -Ubaz */
+#ifdef foo
+one
+#else
+three
+#endif
+#ifdef foo
+four
+five
+#endif
+/* -Ufoo -Ubar -Ubaz */
+three
+/* -Dfoo -Ubar */
+one
+four
+five
+/* -Dfoo -Ubaz */
+one
+four
+#ifndef bar
+five
+#endif
+/* -Dbar -Ubaz */
+#ifdef foo
+one
+#else
+two
+#endif
+#ifdef foo
+four
+#endif
+/* -Dfoo -Ubar -Ubaz */
+one
+four
+five
+/* -Ufoo -Dbar */
+two
+/* -Ufoo -Dbaz */
+#ifdef bar
+two
+#endif
+/* -Ubar -Dbaz */
+#ifdef foo
+one
+#endif
+#ifdef foo
+four
+five
+#endif
+/* -Ufoo -Dbar -Dbaz */
+two
+/* -Dfoo -Ubar -Dbaz */
+one
+four
+five
+/* -Ufoo -Ubar -Dbaz */
+/* -Ufoo -Dbar -Ubaz */
+two
+/* -Dfoo -Dbar -Ubaz */
+one
+four

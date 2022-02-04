@@ -5,8 +5,12 @@
 prefix = /usr/local
 version = 2.7
 
+.PHONY: all check install clean dist
+
+all: cppp
+
 CC = gcc
-CFLAGS = -Wall -Wextra -O2
+CFLAGS = -Wall -Wextra -O2 -s
 
 OBJLIST = gen.o unixisms.o error.o symset.o clexer.o exptree.o ppproc.o cppp.o
 
@@ -24,6 +28,10 @@ cppp.o    : cppp.c gen.h unixisms.h error.h symset.h ppproc.h
 install:
 	cp ./cppp $(prefix)/bin/.
 	cp ./cppp.1 $(prefix)/share/man/man1/.
+
+test:
+	./tests/testall
+	: All tests passed.
 
 clean:
 	rm -f $(OBJLIST) cppp

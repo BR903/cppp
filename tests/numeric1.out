@@ -1,0 +1,49 @@
+/* -Ufoo */
+#if bar
+two
+#endif
+#if 0 > bar
+three
+#elif 0 < bar
+four
+#else
+five
+#endif
+#if 0 + bar == 0 * bar + 1
+six
+#endif
+/* -Dbar */
+#if foo
+one
+#else
+two
+#endif
+#if foo > 1
+three
+#elif foo < 1
+four
+#else
+five
+#endif
+#if foo + 1 == foo * 1 + 1
+six
+#endif
+/* -Dfoo -Dbar */
+one
+five
+six
+/* -Ufoo -Ubar */
+five
+/* -Dfoo=0 -Dbar=0 */
+five
+/* -Dfoo=1 -Dbar=0 */
+one
+three
+six
+/* -Dfoo=0 -Dbar=2 */
+two
+four
+/* -Dfoo=1 -Dbar=2 */
+one
+four
+six

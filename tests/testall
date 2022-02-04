@@ -1,0 +1,110 @@
+#!/bin/bash
+
+PROG=${1:-./cppp}
+
+# Report a failed unit test.
+#
+fail()
+{
+  echo "Unit test failure:" "$@" >&2
+  exit 1
+}
+
+# Run through an input file that responds to the preprocessor symbol
+# "foo", and verify that it behaves as expected.
+#
+goodparsingtest()
+{
+  infile=$1
+  IFS='$' read -a inputs -d@ <$infile
+  for input in "${inputs[@]}" ; do
+    for flag in -Dfoo -Ufoo ; do
+      out=$(echo "$input" | "$PROG" $flag 2>&1)
+      test $? == 0 || fail "non-zero exit code for $infile with flag $flag."
+      test $out == $flag || fail "expected: $flag, got output: \"$out\""
+      test $out == $flag || fail "bad output for $infile with flag $flag."
+    done
+  done
+}
+
+# Run an invalid input file and verify that it produces an error message.
+#
+badparsingtest()
+{
+  infile=$1
+  IFS='$' read -a inputs -d@ <$infile
+  for input in "${inputs[@]}" ; do
+    out=$(echo "$input" | "$PROG" -Dfoo 2>&1 >/dev/null)
+    test $? != 0 || fail "failed to flag invalid input in $infile."
+    test -z "$out" && fail "no error message for invalid input in $infile."
+  done
+}
+
+# Run an input file through every combination of three preprocessor
+# symbols, with each one be defined, undefined, and unspecified.
+#
+fulltest()
+{
+  infile=$1
+  checkfile=$2
+  for flags in -Dfoo -Dbar -Dbaz -Ufoo -Ubar -Ubaz \
+              "-Dfoo -Dbar" "-Dfoo -Dbaz" "-Dbar -Dbaz" "-Dfoo -Dbar -Dbaz" \
+              "-Ufoo -Ubar" "-Ufoo -Ubaz" "-Ubar -Ubaz" "-Ufoo -Ubar -Ubaz" \
+              "-Dfoo -Ubar" "-Dfoo -Ubaz" "-Dbar -Ubaz" "-Dfoo -Ubar -Ubaz" \
+              "-Ufoo -Dbar" "-Ufoo -Dbaz" "-Ubar -Dbaz" "-Ufoo -Dbar -Dbaz" \
+              "-Dfoo -Ubar -Dbaz" "-Ufoo -Ubar -Dbaz" \
+              "-Ufoo -Dbar -Ubaz" "-Dfoo -Dbar -Ubaz" ; do
+    echo '/*' $flags '*/'
+    "$PROG" $flags "$infile"
+    test $? == 0 || fail "non-zero exit code for $infile with flags $flags."
+  done | diff - "$checkfile"
+  test $? == 0 || fail "bad output for $infile."
+}
+
+# Run an input file containing two preprocessor symbols that can take
+# on numeric values.
+#
+numerictest()
+{
+  infile=$1
+  checkfile=$2
+  for flags in -Ufoo -Dbar "-Dfoo -Dbar" "-Ufoo -Ubar" \
+              "-Dfoo=0 -Dbar=0" "-Dfoo=1 -Dbar=0" \
+              "-Dfoo=0 -Dbar=2" "-Dfoo=1 -Dbar=2" ; do
+    echo '/*' $flags '*/'
+    "$PROG" $flags "$infile"
+    test $? == 0 || fail "non-zero exit code for $infile with flags $flags."
+  done | diff - "$checkfile"
+  test $? == 0 || fail "bad output for $infile."
+}
+
+# Tests to validate the basic program behavior.
+#
+misctests()
+{
+  "$PROG" </dev/null >/dev/null
+  test $? == 0 || fail "unable to run test program: $PROG."
+  out=$("$PROG" --help)
+  test $? == 0 || fail "--help option not recognized."
+  test -z "$out" && fail "no --help text."
+  out=$("$PROG" --version)
+  test $? == 0 || fail "--version option not recoginzed."
+  test -z "$out" && fail "no --version text."
+  out=$("$PROG" -Dfoo nosuchfile.c 2>&1 >/dev/null)
+  test $? != 0 || fail "no warning for invalid filename."
+  test -z "$out" && fail "no error message for invalid filename."
+}
+
+#
+#
+#
+
+misctests
+goodparsingtest tests/good.c
+badparsingtest tests/bad.c
+for f in tests/full*.c ; do
+  fulltest "$f" "${f%.c}.out"
+done
+for f in tests/numeric*.c ; do
+  numerictest "$f" "${f%.c}.out"
+done

@@ -1,176 +1,93 @@
 /* -Dfoo */
-/*1*/
-#ifndef bar
-/*2*/
-#endif
-/*4*/
+one
 /* -Dbar */
-#ifdef foo
-/*1*/
-#else
-#ifndef baz
-/*3*/
-#endif
-#endif
-/*4*/
+one
 /* -Dbaz */
-#ifdef foo
-/*1*/
-#ifndef bar
-/*2*/
-#endif
-#else
-#endif
-#if (defined(foo) || defined(bar))
-/*4*/
+#if (defined(foo) || defined bar)
+one
 #elif defined foo ? !defined bar : !1
-/*6*/
+three
 #endif
 /* -Ufoo */
-#ifndef baz
-/*3*/
-#endif
-#if defined(bar)
-/*4*/
+#if defined bar
+one
 #elif !defined(baz)  // comment
-/*5*/
+two
 #elif !defined baz
-/*6*/
+three
 #endif
 /* -Ubar */
-#ifdef foo
-/*1*/
-/*2*/
-#else
-#ifndef baz
-/*3*/
-#endif
-#endif
 #if defined(foo)
-/*4*/
+one
 #elif (!defined(foo) && !defined(baz))  // comment
-/*5*/
+two
 #elif defined foo ? !0 : !defined baz
-/*6*/
+three
 #endif
 /* -Ubaz */
-#ifdef foo
-/*1*/
-#ifndef bar
-/*2*/
-#endif
-#else
-/*3*/
-#endif
-#if (defined(foo) || defined(bar))
-/*4*/
+#if (defined(foo) || defined bar)
+one
 #elif !defined(foo)  // comment
-/*5*/
+two
 #elif defined foo ? !defined bar : !0
-/*6*/
+three
 #endif
 /* -Dfoo -Dbar */
-/*1*/
-/*4*/
+one
 /* -Dfoo -Dbaz */
-/*1*/
-#ifndef bar
-/*2*/
-#endif
-/*4*/
+one
 /* -Dbar -Dbaz */
-#ifdef foo
-/*1*/
-#else
-#endif
-/*4*/
+one
 /* -Dfoo -Dbar -Dbaz */
-/*1*/
-/*4*/
+one
 /* -Ufoo -Ubar */
-#ifndef baz
-/*3*/
-#endif
 #if !defined(baz)  // comment
-/*5*/
+two
 #elif !defined baz
-/*6*/
+three
 #endif
 /* -Ufoo -Ubaz */
-/*3*/
-#if defined(bar)
-/*4*/
+#if defined bar
+one
 #else
-/*5*/
+two
 #endif
 /* -Ubar -Ubaz */
-#ifdef foo
-/*1*/
-/*2*/
-#else
-/*3*/
-#endif
 #if defined(foo)
-/*4*/
+one
 #elif !defined(foo)  // comment
-/*5*/
+two
 #elif defined foo ? !0 : !0
-/*6*/
+three
 #endif
 /* -Ufoo -Ubar -Ubaz */
-/*3*/
-/*5*/
+two
 /* -Dfoo -Ubar */
-/*1*/
-/*2*/
-/*4*/
+one
 /* -Dfoo -Ubaz */
-/*1*/
-#ifndef bar
-/*2*/
-#endif
-/*4*/
+one
 /* -Dbar -Ubaz */
-#ifdef foo
-/*1*/
-#else
-/*3*/
-#endif
-/*4*/
+one
 /* -Dfoo -Ubar -Ubaz */
-/*1*/
-/*2*/
-/*4*/
+one
 /* -Ufoo -Dbar */
-#ifndef baz
-/*3*/
-#endif
-/*4*/
+one
 /* -Ufoo -Dbaz */
-#if defined(bar)
-/*4*/
+#if defined bar
+one
 #endif
 /* -Ubar -Dbaz */
-#ifdef foo
-/*1*/
-/*2*/
-#else
-#endif
 #if defined(foo)
-/*4*/
+one
 #elif defined foo ? !0 : !1
-/*6*/
+three
 #endif
 /* -Ufoo -Dbar -Dbaz */
-/*4*/
+one
 /* -Dfoo -Ubar -Dbaz */
-/*1*/
-/*2*/
-/*4*/
+one
 /* -Ufoo -Ubar -Dbaz */
 /* -Ufoo -Dbar -Ubaz */
-/*3*/
-/*4*/
+one
 /* -Dfoo -Dbar -Ubaz */
-/*1*/
-/*4*/
+one
