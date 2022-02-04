@@ -1,3 +1,5 @@
 *.o
 cppp
 *.tar.gz
+MANIFEST
+mkdist

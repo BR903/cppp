@@ -10,7 +10,7 @@ version = 2.7
 all: cppp
 
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -s
+CFLAGS = -Wall -Wextra -O2
 
 OBJLIST = gen.o unixisms.o error.o symset.o clexer.o exptree.o ppproc.o cppp.o
 
