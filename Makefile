@@ -29,7 +29,7 @@ install:
 	cp ./cppp $(prefix)/bin/.
 	cp ./cppp.1 $(prefix)/share/man/man1/.
 
-test:
+test: cppp
 	./tests/testall
 	: All tests passed.
 
