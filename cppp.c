@@ -226,6 +226,8 @@ int main(int argc, char *argv[])
 	fail("\"%s\" is not a directory.", argv[argc - 1]);
     }
 
+    if (geterrormark() > 0)
+        exitcode = EXIT_FAILURE;
     freeppproc(ppp);
     freesymset(defs);
     freesymset(undefs);

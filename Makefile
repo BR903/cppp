@@ -35,10 +35,3 @@ test:
 
 clean:
 	rm -f $(OBJLIST) cppp
-
-dist:
-	rm -f cppp-$(version).tar cppp-$(version).tar.gz
-	ln -s . cppp-$(version)
-	sed "s,^,cppp-$(version)/," MANIFEST | tar -cf cppp-$(version).tar -T -
-	gzip -9 cppp-$(version).tar
-	rm cppp-$(version)

@@ -143,7 +143,7 @@ static char const *seqif(struct ppproc *ppp, char *ifexp, enum status *status)
 /* Partially preprocesses the current line of input. If the input
  * contains a preprocessor statement, the state of ppproc is updated
  * to reflect the current section, and if necessary the line of input
- * will be altered for output.
+ * will be altered for output. This is where the sausage is made.
  */
 static void seq(struct ppproc *ppp)
 {
