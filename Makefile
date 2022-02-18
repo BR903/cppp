@@ -3,7 +3,6 @@
 # Where to install
 #
 prefix = /usr/local
-version = 2.7
 
 .PHONY: all check install clean dist
 

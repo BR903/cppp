@@ -3,8 +3,8 @@
  * This is free software; you are free to change and redistribute it.
  * There is NO WARRANTY, to the extent permitted by law.
  */
-#ifndef	_exptree_h_
-#define	_exptree_h_
+#ifndef _exptree_h_
+#define _exptree_h_
 
 /*
  * An expression tree parses and, where possible, evaluates C

@@ -1,10 +1,8 @@
-/* ppproc.h: Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>
+/* ppproc.h: Copyright (C) 2011-2022 by Brian Raiter <breadbox@muppetlabs.com>
  * License GPLv2+: GNU GPL version 2 or later.
- * This is free software; you are free to change and redistribute it.
- * There is NO WARRANTY, to the extent permitted by law.
  */
-#ifndef	_ppproc_h_
-#define	_ppproc_h_
+#ifndef _ppproc_h_
+#define _ppproc_h_
 
 /*
  * The ppproc object does the actual work of identifying preprocessor

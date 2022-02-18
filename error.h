@@ -1,7 +1,5 @@
-/* error.h: Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>
+/* error.h: Copyright (C) 2011-2022 by Brian Raiter <breadbox@muppetlabs.com>
  * License GPLv2+: GNU GPL version 2 or later.
- * This is free software; you are free to change and redistribute it.
- * There is NO WARRANTY, to the extent permitted by law.
  */
 #ifndef _error_h_
 #define _error_h_
@@ -16,25 +14,25 @@
 enum errortype
 {
     errNone = 0,
-    errSyntax,			/* general syntax error */
-    errFileIO,			/* file I/O failure (see errno) */
-    errBadCharLiteral,		/* invalid character sequence in quotes */
-    errOpenCharLiteral,		/* unclosed single quote */
-    errOpenStringLiteral,	/* unclosed double quote */
-    errOpenComment,		/* unclosed multi-line comment */
-    errBrokenComment,		/* comment spanning removed line */
-    errDanglingElse,		/* unmatched #else found */
-    errDanglingEnd,		/* unmatched #end found */
-    errOpenIf,			/* unclosed #if */
-    errElifWithIfdef,		/* #elif following #ifdef/#ifndef */
-    errElifdefWithIf,		/* #elifdef/#elifndef following #if */
-    errIfsTooDeep,		/* way too many nested #ifs */
-    errOpenParenthesis,		/* unclosed left parenthesis */
-    errMissingOperand,		/* operand expected to follow expression */
-    errZeroDiv,			/* division by zero in an expression */
-    errEmptyIf,			/* missing #if parameter */
-    errIfSyntax,		/* general syntax error inside #if parameter */
-    errDefinedSyntax,		/* general syntax error in defined operand */
+    errSyntax,                  /* general syntax error */
+    errFileIO,                  /* file I/O failure (see errno) */
+    errBadCharLiteral,          /* invalid character sequence in quotes */
+    errOpenCharLiteral,         /* unclosed single quote */
+    errOpenStringLiteral,       /* unclosed double quote */
+    errOpenComment,             /* unclosed multi-line comment */
+    errBrokenComment,           /* comment spanning removed line */
+    errDanglingElse,            /* unmatched #else found */
+    errDanglingEnd,             /* unmatched #end found */
+    errOpenIf,                  /* unclosed #if */
+    errElifWithIfdef,           /* #elif following #ifdef/#ifndef */
+    errElifdefWithIf,           /* #elifdef/#elifndef following #if */
+    errIfsTooDeep,              /* way too many nested #ifs */
+    errOpenParenthesis,         /* unclosed left parenthesis */
+    errMissingOperand,          /* operand expected to follow expression */
+    errZeroDiv,                 /* division by zero in an expression */
+    errEmptyIf,                 /* missing #if parameter */
+    errIfSyntax,                /* general syntax error inside #if parameter */
+    errDefinedSyntax,           /* general syntax error in defined operand */
     errCount
 };
 

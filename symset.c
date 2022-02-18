@@ -1,7 +1,5 @@
-/* symset.c: Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>
+/* symset.c: Copyright (C) 2011-2022 by Brian Raiter <breadbox@muppetlabs.com>
  * License GPLv2+: GNU GPL version 2 or later.
- * This is free software; you are free to change and redistribute it.
- * There is NO WARRANTY, to the extent permitted by law.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -23,16 +21,16 @@ typedef struct sym sym;
 /* A preprocessor symbol.
  */
 struct sym {
-    char const *id;		/* the symbol's name */
-    long	value;		/* the symbol's value */
+    char const *id;             /* the symbol's name */
+    long        value;          /* the symbol's value */
 };
 
 /* An unordered collection of symbols.
  */
 struct symset {
-    sym	       *syms;		/* an array of symbols */
-    int		allocated;	/* how many entries are allocated */
-    int		size;		/* how many entries are currently stored */
+    sym        *syms;           /* an array of symbols */
+    int         allocated;      /* how many entries are allocated */
+    int         size;           /* how many entries are currently stored */
 };
 
 /* Allocate a new symset.
@@ -53,8 +51,8 @@ symset *initsymset(void)
 void freesymset(symset *set)
 {
     if (set) {
-	deallocate(set->syms);
-	deallocate(set);
+        deallocate(set->syms);
+        deallocate(set);
     }
 }
 
@@ -63,9 +61,9 @@ void freesymset(symset *set)
 void addsymboltoset(symset *set, char const *id, long value)
 {
     if (set->size == set->allocated) {
-	set->allocated *= 2;
-	set->syms = reallocate(set->syms,
-			       set->allocated * sizeof *set->syms);
+        set->allocated *= 2;
+        set->syms = reallocate(set->syms,
+                               set->allocated * sizeof *set->syms);
     }
     set->syms[set->size].id = id;
     set->syms[set->size].value = value;
@@ -81,13 +79,13 @@ static int idcmp(char const *a, char const *b)
 
     i = 0;
     for (;;) {
-	if (!_issym(a[i]))
-	    return _issym(b[i]) ? -1 : 0;
-	else if (!_issym(b[i]))
-	    return +1;
-	else if (a[i] != b[i])
-	    return a[i] - b[i];
-	++i;
+        if (!_issym(a[i]))
+            return _issym(b[i]) ? -1 : 0;
+        else if (!_issym(b[i]))
+            return +1;
+        else if (a[i] != b[i])
+            return a[i] - b[i];
+        ++i;
     }
 }
 
@@ -98,13 +96,13 @@ int findsymbolinset(symset const *set, char const *id, long *value)
     int i;
 
     if (set) {
-	for (i = 0 ; i < set->size ; ++i) {
-	    if (!idcmp(set->syms[i].id, id)) {
-		if (value)
-		    *value = set->syms[i].value;
-		return TRUE;
-	    }
-	}
+        for (i = 0 ; i < set->size ; ++i) {
+            if (!idcmp(set->syms[i].id, id)) {
+                if (value)
+                    *value = set->syms[i].value;
+                return TRUE;
+            }
+        }
     }
     return FALSE;
 }
@@ -116,13 +114,13 @@ int removesymbolfromset(symset *set, char const *id)
     int i;
 
     if (set) {
-	for (i = 0 ; i < set->size ; ++i) {
-	    if (!idcmp(set->syms[i].id, id)) {
-		set->syms[i] = set->syms[set->size - 1];
-		--set->size;
-		return TRUE;
-	    }
-	}
+        for (i = 0 ; i < set->size ; ++i) {
+            if (!idcmp(set->syms[i].id, id)) {
+                set->syms[i] = set->syms[set->size - 1];
+                --set->size;
+                return TRUE;
+            }
+        }
     }
     return FALSE;
 }

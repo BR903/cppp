@@ -1,10 +1,8 @@
-/* clexer.h: Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>
+/* clexer.h: Copyright (C) 2011-2022 by Brian Raiter <breadbox@muppetlabs.com>
  * License GPLv2+: GNU GPL version 2 or later.
- * This is free software; you are free to change and redistribute it.
- * There is NO WARRANTY, to the extent permitted by law.
  */
-#ifndef	_clexer_h_
-#define	_clexer_h_
+#ifndef _clexer_h_
+#define _clexer_h_
 
 /*
  * The C lexer object does basic lexical analysis on the input stream.
@@ -96,7 +94,7 @@ extern void endstream(clexer *cl);
  * is returned via cmdid.
  */
 extern char const *getpreprocessorcmd(clexer *cl, char const *input,
-				      enum ppcmd *cmdid);
+                                      enum ppcmd *cmdid);
 
 /* Mark the end of the current line of input. This function should be
  * called before the next call to beginline().

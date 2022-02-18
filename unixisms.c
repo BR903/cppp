@@ -1,7 +1,6 @@
-/* unixisms.c: Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>
+/* unixisms.c: Copyright (C) 2011-2022
+ * by Brian Raiter <breadbox@muppetlabs.com>
  * License GPLv2+: GNU GPL version 2 or later.
- * This is free software; you are free to change and redistribute it.
- * There is NO WARRANTY, to the extent permitted by law.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -25,7 +24,7 @@ int fileisdir(char const *name)
     struct stat s;
 
     if (stat(name, &s))
-	return 0;
+        return 0;
     return S_ISDIR(s.st_mode);
 }
 

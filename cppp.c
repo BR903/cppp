@@ -1,7 +1,5 @@
-/* cppp.c: Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>
+/* cppp.c: Copyright (C) 2011-2022 by Brian Raiter <breadbox@muppetlabs.com>
  * License GPLv2+: GNU GPL version 2 or later.
- * This is free software; you are free to change and redistribute it.
- * There is NO WARRANTY, to the extent permitted by law.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,11 +33,11 @@ static char const *const yowzitch3 =
 /* Version identifier.
  */
 static char const *const vourzhon =
-    "cppp: version 2.7\n"
-    "Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>\n"
+    "cppp: version 2.8\n"
+    "Copyright (C) 2011-2022 by Brian Raiter <breadbox@muppetlabs.com>\n"
     "License GPLv2+: GNU GPL version 2 or later.\n"
     "This is free software; you are free to change and redistribute it.\n"
-    "There is NO WARRANTY, to the extent permitted by law.\n";
+    "There is no warranty, to the extent permitted by law.\n";
 
 /* Display a warning message regarding command-line syntax.
  */
@@ -78,64 +76,64 @@ static int readcmdline(int argc, char *argv[], symset *defs, symset *undefs)
     int i, j;
 
     for (i = j = 1 ; i < argc ; ++i) {
-	if (argv[i][0] != '-') {
-	    argv[j++] = argv[i];
-	    continue;
-	}
-	if (!strcmp(argv[i], "--help")) {
-	    fputs(yowzitch1, stdout);
-	    fputs(yowzitch2, stdout);
-	    fputs(yowzitch3, stdout);
-	    exit(EXIT_SUCCESS);
-	} else if (!strcmp(argv[i], "--version")) {
-	    fputs(vourzhon, stdout);
-	    exit(EXIT_SUCCESS);
-	}
-	if (!strcmp(argv[i], "--")) {
-	    for (++i ; i < argc ; ++i)
-		argv[j++] = argv[i];
-	    break;
-	}
-	if (argv[i][1] == 'D') {
-	    arg = argv[i] + 2;
-	    if (!*arg) {
-		if (i + 1 < argc)
-		    arg = argv[++i];
-		else
-		    fail("missing argument to -D");
-	    }
-	    p = strchr(arg, '=');
-	    if (p) {
-		*p++ = '\0';
-		if (!*p)
-		    fail("missing value for symbol %s", arg);
-		value = strtol(p, &p, 0);
-		if (*p || value == LONG_MIN || value == LONG_MAX)
-		    fail("invalid numeric value for symbol %s", arg);
-	    } else {
-		value = 1;
-	    }
-	    if (removesymbolfromset(undefs, arg))
-		warn("defining undefined symbol %s", arg);
-	    else if (removesymbolfromset(defs, arg))
-		warn("defining already-defined symbol %s", arg);
-	    addsymboltoset(defs, arg, value);
-	} else if (argv[i][1] == 'U') {
-	    arg = argv[i] + 2;
-	    if (!*arg) {
-		if (i + 1 < argc)
-		    arg = argv[++i];
-		else
-		    fail("missing argument to -U");
-	    }
-	    if (removesymbolfromset(defs, arg))
-		warn("undefining defined symbol %s", arg);
-	    else if (removesymbolfromset(undefs, arg))
-		warn("undefining already-undefined symbol %s", arg);
-	    addsymboltoset(undefs, arg, 0L);
-	} else {
-	    fail("invalid option: %s", argv[i]);
-	}
+        if (argv[i][0] != '-') {
+            argv[j++] = argv[i];
+            continue;
+        }
+        if (!strcmp(argv[i], "--help")) {
+            fputs(yowzitch1, stdout);
+            fputs(yowzitch2, stdout);
+            fputs(yowzitch3, stdout);
+            exit(EXIT_SUCCESS);
+        } else if (!strcmp(argv[i], "--version")) {
+            fputs(vourzhon, stdout);
+            exit(EXIT_SUCCESS);
+        }
+        if (!strcmp(argv[i], "--")) {
+            for (++i ; i < argc ; ++i)
+                argv[j++] = argv[i];
+            break;
+        }
+        if (argv[i][1] == 'D') {
+            arg = argv[i] + 2;
+            if (!*arg) {
+                if (i + 1 < argc)
+                    arg = argv[++i];
+                else
+                    fail("missing argument to -D");
+            }
+            p = strchr(arg, '=');
+            if (p) {
+                *p++ = '\0';
+                if (!*p)
+                    fail("missing value for symbol %s", arg);
+                value = strtol(p, &p, 0);
+                if (*p || value == LONG_MIN || value == LONG_MAX)
+                    fail("invalid numeric value for symbol %s", arg);
+            } else {
+                value = 1;
+            }
+            if (removesymbolfromset(undefs, arg))
+                warn("defining undefined symbol %s", arg);
+            else if (removesymbolfromset(defs, arg))
+                warn("defining already-defined symbol %s", arg);
+            addsymboltoset(defs, arg, value);
+        } else if (argv[i][1] == 'U') {
+            arg = argv[i] + 2;
+            if (!*arg) {
+                if (i + 1 < argc)
+                    arg = argv[++i];
+                else
+                    fail("missing argument to -U");
+            }
+            if (removesymbolfromset(defs, arg))
+                warn("undefining defined symbol %s", arg);
+            else if (removesymbolfromset(undefs, arg))
+                warn("undefining already-undefined symbol %s", arg);
+            addsymboltoset(undefs, arg, 0L);
+        } else {
+            fail("invalid option: %s", argv[i]);
+        }
     }
     return j;
 }
@@ -166,71 +164,71 @@ int main(int argc, char *argv[])
 
     exitcode = EXIT_SUCCESS;
     if (argc <= 1) {
-	seterrorfile(NULL);
-	partialpreprocess(ppp, stdin, stdout);
+        seterrorfile(NULL);
+        partialpreprocess(ppp, stdin, stdout);
     } else if (argc == 2) {
-	filename = argv[1];
-	seterrorfile(filename);
-	if (!(infile = fopen(filename, "r"))) {
-	    perror(filename);
-	    return EXIT_FAILURE;
-	}
-	partialpreprocess(ppp, infile, stdout);
-	fclose(infile);
+        filename = argv[1];
+        seterrorfile(filename);
+        if (!(infile = fopen(filename, "r"))) {
+            perror(filename);
+            return EXIT_FAILURE;
+        }
+        partialpreprocess(ppp, infile, stdout);
+        fclose(infile);
     } else if (fileisdir(argv[argc - 1])) {
         if (!savedir()) {
             perror(".");
             exit(EXIT_FAILURE);
         }
-	dirname = argv[argc - 1];
-	for (i = 1 ; i < argc - 1 ; ++i) {
-	    filename = argv[i];
-	    seterrorfile(filename);
-	    if (!(infile = fopen(filename, "r"))) {
-		perror(filename);
-		exitcode = EXIT_FAILURE;
-		continue;
-	    }
+        dirname = argv[argc - 1];
+        for (i = 1 ; i < argc - 1 ; ++i) {
+            filename = argv[i];
+            seterrorfile(filename);
+            if (!(infile = fopen(filename, "r"))) {
+                perror(filename);
+                exitcode = EXIT_FAILURE;
+                continue;
+            }
             if (!changedir(dirname)) {
-		perror(dirname);
-		exit(EXIT_FAILURE);
-	    }
-	    filename = getbasefilename(filename);
-	    outfile = fopen(filename, "w");
-	    if (outfile) {
-		partialpreprocess(ppp, infile, outfile);
-		if (fclose(outfile)) {
-		    perror(filename);
-		    exitcode = EXIT_FAILURE;
-		}
-	    } else {
-		perror(filename);
-		exitcode = EXIT_FAILURE;
-	    }
-	    fclose(infile);
-	    restoredir();
-	}
+                perror(dirname);
+                exit(EXIT_FAILURE);
+            }
+            filename = getbasefilename(filename);
+            outfile = fopen(filename, "w");
+            if (outfile) {
+                partialpreprocess(ppp, infile, outfile);
+                if (fclose(outfile)) {
+                    perror(filename);
+                    exitcode = EXIT_FAILURE;
+                }
+            } else {
+                perror(filename);
+                exitcode = EXIT_FAILURE;
+            }
+            fclose(infile);
+            restoredir();
+        }
         unsavedir();
     } else if (argc == 3) {
-	filename = argv[1];
-	seterrorfile(filename);
-	if (!(infile = fopen(filename, "r"))) {
-	    perror(filename);
-	    return EXIT_FAILURE;
-	}
-	filename = argv[2];
-	if (!(outfile = fopen(filename, "w"))) {
-	    perror(filename);
-	    return EXIT_FAILURE;
-	}
-	partialpreprocess(ppp, infile, outfile);
-	fclose(infile);
-	if (fclose(outfile)) {
-	    perror(filename);
-	    exitcode = EXIT_FAILURE;
-	}
+        filename = argv[1];
+        seterrorfile(filename);
+        if (!(infile = fopen(filename, "r"))) {
+            perror(filename);
+            return EXIT_FAILURE;
+        }
+        filename = argv[2];
+        if (!(outfile = fopen(filename, "w"))) {
+            perror(filename);
+            return EXIT_FAILURE;
+        }
+        partialpreprocess(ppp, infile, outfile);
+        fclose(infile);
+        if (fclose(outfile)) {
+            perror(filename);
+            exitcode = EXIT_FAILURE;
+        }
     } else {
-	fail("\"%s\" is not a directory.", argv[argc - 1]);
+        fail("\"%s\" is not a directory.", argv[argc - 1]);
     }
 
     if (geterrormark() > 0)

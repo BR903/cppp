@@ -32,7 +32,8 @@ file, it will output a message and do its best to skip over the
 invalid construct and continue parsing. Note that it is possible
 (though rare) for compiler extensions to be reported as errors -- e.g.
 some compilers reportedly allow #elif directives in a sequence
-beginning with #ifdef.
+beginning with #ifdef. (Although please note that cppp does include
+support for #elifdef/#elifndef.)
 
 The general purpose of this program is to deal with legacy code bases
 where #ifdefs have crept in and infiltrated the source. This sort of
@@ -57,9 +58,9 @@ That said, cppp is free software, so you can redistribute it and/or
 modify it under the terms of the GNU General Public License as
 published by the Free Software Foundation; either version 2 of the
 License, or (at your option) any later version. This program is
-distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License,
+distributed in the hope that it will be useful, but without any
+warranty; without even the implied warranty of merchantability or
+fitness for a particular purpose. See the GNU General Public License,
 included in this distribution in the file COPYING, for more details.
 
 cppp website: <http://www.muppetlabs.com/~breadbox/software/cppp.html>.

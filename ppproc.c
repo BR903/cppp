@@ -1,7 +1,5 @@
-/* ppproc.c: Copyright (C) 2011 by Brian Raiter <breadbox@muppetlabs.com>
+/* ppproc.c: Copyright (C) 2011-2022 by Brian Raiter <breadbox@muppetlabs.com>
  * License GPLv2+: GNU GPL version 2 or later.
- * This is free software; you are free to change and redistribute it.
- * There is NO WARRANTY, to the extent permitted by law.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,14 +19,14 @@
 
 /* State flags tracking the current state of ppproc.
  */
-#define F_If		0x0001		/* inside a #if section */
-#define F_Else		0x0002		/* inside a #else section */
-#define F_Elif		0x0004		/* inside a #elif section */
-#define F_Ifdef		0x0008		/* #if is actually #ifdef/#ifndef */
-#define F_Ours		0x0010		/* guarded by user-specified symbol */
-#define F_Copy		0x0020		/* section is passed to output */
-#define F_IfModify	0x0040		/* modified #if expression */
-#define F_ElseModify	0x0080		/* modified #elif expression */
+#define F_If            0x0001          /* inside a #if section */
+#define F_Else          0x0002          /* inside a #else section */
+#define F_Elif          0x0004          /* inside a #elif section */
+#define F_Ifdef         0x0008          /* #if is actually #ifdef/#ifndef */
+#define F_Ours          0x0010          /* guarded by user-specified symbol */
+#define F_Copy          0x0020          /* section is passed to output */
+#define F_IfModify      0x0040          /* modified #if expression */
+#define F_ElseModify    0x0080          /* modified #elif expression */
 
 /* Return codes for the seqif() function.
  */
@@ -40,14 +38,14 @@ enum status
 /* The partial preprocessor.
  */
 struct ppproc {
-    clexer     *cl;			/* the lexer */
-    symset const *defs;			/* list of defined symbols */
-    symset const *undefs;		/* list of undefined symbols */
-    mstr       *line;			/* the current line of input */
-    int		copy;			/* true if input is going to output */
-    int		absorb;			/* true if input is being suppressed */
-    int		level;			/* current nesting level */
-    int		stack[STACK_SIZE];	/* state flags for each level */
+    clexer     *cl;                     /* the lexer */
+    symset const *defs;                 /* list of defined symbols */
+    symset const *undefs;               /* list of undefined symbols */
+    mstr       *line;                   /* the current line of input */
+    int         copy;                   /* true if input is going to output */
+    int         absorb;                 /* true if input is being suppressed */
+    int         level;                  /* current nesting level */
+    int         stack[STACK_SIZE];      /* state flags for each level */
 };
 
 /* Allocates a partial preprocessor object.
@@ -88,7 +86,7 @@ static void endfile(ppproc *ppp)
 {
     endstream(ppp->cl);
     if (ppp->level != -1)
-	error(errOpenIf);
+        error(errOpenIf);
     erasemstr(ppp->line);
 }
 
@@ -116,21 +114,21 @@ static char const *seqif(ppproc *ppp, char *ifexp, enum status *status)
     n = geterrormark();
     ret = parseexptree(tree, ppp->cl, ifexp);
     if (errorsincemark(n)) {
-	*status = statError;
-	goto quit;
+        *status = statError;
+        goto quit;
     }
 
     n = markdefined(tree, ppp->defs, TRUE) +
-	markdefined(tree, ppp->undefs, FALSE);
+        markdefined(tree, ppp->undefs, FALSE);
     if (n) {
-	*status = evaltree(tree, &defined) ? statDefined : statUndefined;
-	if (!defined) {
-	    *status = statPartDefined;
-	    str = allocate(strlen(ifexp) + 1);
-	    n = unparseevaluated(tree, str);
+        *status = evaltree(tree, &defined) ? statDefined : statUndefined;
+        if (!defined) {
+            *status = statPartDefined;
+            str = allocate(strlen(ifexp) + 1);
+            n = unparseevaluated(tree, str);
             ret = editmstr(ppp->line, ifexp, getexplength(tree), str, n) + n;
-	    deallocate(str);
-	}
+            deallocate(str);
+        }
     }
 
   quit:
@@ -157,9 +155,9 @@ static void seq(ppproc *ppp)
     ppp->absorb = FALSE;
     input = beginline(ppp->cl, getmstrbuf(ppp->line));
     while (!preproclinep(ppp->cl)) {
-	if (endoflinep(ppp->cl))
-	    return;
-	input = nextchar(ppp->cl, input);
+        if (endoflinep(ppp->cl))
+            return;
+        input = nextchar(ppp->cl, input);
     }
 
     cmd = skipwhite(ppp->cl, nextchar(ppp->cl, input));
@@ -168,273 +166,273 @@ static void seq(ppproc *ppp)
     switch (id) {
       case cmdIfdef:
       case cmdIfndef:
-	if (ppp->level + 1 >= sizearray(ppp->stack)) {
-	    error(errIfsTooDeep);
-	    break;
-	}
-	++ppp->level;
-	ppp->stack[ppp->level] = F_If | F_Ifdef;
-	if (!ppp->copy) {
-	    input = restofline(ppp->cl, input);
-	    break;
-	}
-	ppp->stack[ppp->level] |= F_Copy;
-	size = getidentifierlength(input);
-	if (!size) {
-	    error(errEmptyIf);
-	    break;
-	}
-	if (findsymbolinset(ppp->defs, input, NULL))
-	    status = statDefined;
-	else if (findsymbolinset(ppp->undefs, input, NULL))
-	    status = statUndefined;
-	else
-	    status = statUnaffected;
+        if (ppp->level + 1 >= sizearray(ppp->stack)) {
+            error(errIfsTooDeep);
+            break;
+        }
+        ++ppp->level;
+        ppp->stack[ppp->level] = F_If | F_Ifdef;
+        if (!ppp->copy) {
+            input = restofline(ppp->cl, input);
+            break;
+        }
+        ppp->stack[ppp->level] |= F_Copy;
+        size = getidentifierlength(input);
+        if (!size) {
+            error(errEmptyIf);
+            break;
+        }
+        if (findsymbolinset(ppp->defs, input, NULL))
+            status = statDefined;
+        else if (findsymbolinset(ppp->undefs, input, NULL))
+            status = statUndefined;
+        else
+            status = statUnaffected;
         cmdend = nextchars(ppp->cl, input, size);
-	input = skipwhite(ppp->cl, cmdend);
-	if (!endoflinep(ppp->cl)) {
-	    error(errSyntax);
-	    break;
-	}
-	if (status != statUnaffected) {
-	    ppp->absorb = TRUE;
-	    ppp->stack[ppp->level] |= F_Ours;
-	    if (id == cmdIfdef)
-		ppp->copy = status == statDefined;
-	    else
-		ppp->copy = status == statUndefined;
-	}
-	break;
+        input = skipwhite(ppp->cl, cmdend);
+        if (!endoflinep(ppp->cl)) {
+            error(errSyntax);
+            break;
+        }
+        if (status != statUnaffected) {
+            ppp->absorb = TRUE;
+            ppp->stack[ppp->level] |= F_Ours;
+            if (id == cmdIfdef)
+                ppp->copy = status == statDefined;
+            else
+                ppp->copy = status == statUndefined;
+        }
+        break;
 
       case cmdIf:
-	if (ppp->level + 1 >= sizearray(ppp->stack)) {
-	    error(errIfsTooDeep);
-	    break;
-	}
-	++ppp->level;
-	ppp->stack[ppp->level] = F_If | (ppp->copy ? F_Copy : 0);
-	if (!ppp->copy) {
-	    input = restofline(ppp->cl, input);
-	    break;
-	}
-	cmdend = seqif(ppp, (char*)input, &status);
-	if (status == statError)
-	    break;
-	input = skipwhite(ppp->cl, cmdend);
-	if (!endoflinep(ppp->cl)) {
-	    error(errIfSyntax);
-	    break;
-	}
-	if (status == statDefined || status == statUndefined) {
-	    ppp->absorb = TRUE;
-	    ppp->stack[ppp->level] |= F_Ours;
-	    ppp->copy = status == statDefined;
-	}
-	break;
+        if (ppp->level + 1 >= sizearray(ppp->stack)) {
+            error(errIfsTooDeep);
+            break;
+        }
+        ++ppp->level;
+        ppp->stack[ppp->level] = F_If | (ppp->copy ? F_Copy : 0);
+        if (!ppp->copy) {
+            input = restofline(ppp->cl, input);
+            break;
+        }
+        cmdend = seqif(ppp, (char*)input, &status);
+        if (status == statError)
+            break;
+        input = skipwhite(ppp->cl, cmdend);
+        if (!endoflinep(ppp->cl)) {
+            error(errIfSyntax);
+            break;
+        }
+        if (status == statDefined || status == statUndefined) {
+            ppp->absorb = TRUE;
+            ppp->stack[ppp->level] |= F_Ours;
+            ppp->copy = status == statDefined;
+        }
+        break;
 
       case cmdElse:
-	if (ppp->level < 0 || (ppp->stack[ppp->level] & F_Else)) {
-	    error(errDanglingElse);
-	    break;
-	}
-	ppp->stack[ppp->level] |= F_Else;
-	if (!endoflinep(ppp->cl)) {
-	    error(errSyntax);
-	    break;
-	}
+        if (ppp->level < 0 || (ppp->stack[ppp->level] & F_Else)) {
+            error(errDanglingElse);
+            break;
+        }
+        ppp->stack[ppp->level] |= F_Else;
+        if (!endoflinep(ppp->cl)) {
+            error(errSyntax);
+            break;
+        }
         cmdend = input;
-	if (ppp->stack[ppp->level] & F_Ours) {
-	    ppp->copy = !ppp->copy;
-	    ppp->absorb = TRUE;
-	    n = ppp->level;
-	    while (ppp->stack[n] & F_Elif) {
-		if (ppp->stack[n] & F_ElseModify) {
-		    ppp->absorb = TRUE;
-		    break;
-		}
-		--n;
-		if (!(ppp->stack[n] & F_Ours))
-		    ppp->absorb = FALSE;
-	    }
-	}
-	break;
+        if (ppp->stack[ppp->level] & F_Ours) {
+            ppp->copy = !ppp->copy;
+            ppp->absorb = TRUE;
+            n = ppp->level;
+            while (ppp->stack[n] & F_Elif) {
+                if (ppp->stack[n] & F_ElseModify) {
+                    ppp->absorb = TRUE;
+                    break;
+                }
+                --n;
+                if (!(ppp->stack[n] & F_Ours))
+                    ppp->absorb = FALSE;
+            }
+        }
+        break;
 
       case cmdElifdef:
       case cmdElifndef:
-	if (ppp->level < 0 || (ppp->stack[ppp->level] & F_Else)) {
-	    error(errDanglingElse);
-	    break;
-	} else if (ppp->level + 1 >= sizearray(ppp->stack)) {
-	    error(errIfsTooDeep);
-	    break;
-	}
-	if (!(ppp->stack[ppp->level] & F_Ifdef))
-	    error(errElifdefWithIf);
-	ppp->stack[ppp->level] |= F_Else;
-	if (ppp->stack[ppp->level] & F_Ours) {
-	    ppp->copy = !ppp->copy;
-	    ppp->absorb = TRUE;
-	    n = ppp->level;
-	    while (ppp->stack[n] & F_Elif) {
-		if (ppp->stack[n] & F_ElseModify) {
-		    ppp->absorb = TRUE;
-		    break;
-		}
-		--n;
-		if (!(ppp->stack[n] & F_Ours))
-		    ppp->absorb = FALSE;
-	    }
-	}
-	++ppp->level;
-	ppp->stack[ppp->level] = F_If | F_Elif | F_Ifdef;
+        if (ppp->level < 0 || (ppp->stack[ppp->level] & F_Else)) {
+            error(errDanglingElse);
+            break;
+        } else if (ppp->level + 1 >= sizearray(ppp->stack)) {
+            error(errIfsTooDeep);
+            break;
+        }
+        if (!(ppp->stack[ppp->level] & F_Ifdef))
+            error(errElifdefWithIf);
+        ppp->stack[ppp->level] |= F_Else;
+        if (ppp->stack[ppp->level] & F_Ours) {
+            ppp->copy = !ppp->copy;
+            ppp->absorb = TRUE;
+            n = ppp->level;
+            while (ppp->stack[n] & F_Elif) {
+                if (ppp->stack[n] & F_ElseModify) {
+                    ppp->absorb = TRUE;
+                    break;
+                }
+                --n;
+                if (!(ppp->stack[n] & F_Ours))
+                    ppp->absorb = FALSE;
+            }
+        }
+        ++ppp->level;
+        ppp->stack[ppp->level] = F_If | F_Elif | F_Ifdef;
         cmdend = input;
-	if (!ppp->copy) {
-	    input = restofline(ppp->cl, input);
-	    break;
-	}
-	ppp->stack[ppp->level] |= F_Copy;
-	size = getidentifierlength(input);
-	if (!size) {
-	    error(errEmptyIf);
-	    break;
-	}
-	if (findsymbolinset(ppp->defs, input, NULL))
-	    status = statDefined;
-	else if (findsymbolinset(ppp->undefs, input, NULL))
-	    status = statUndefined;
-	else
-	    status = statUnaffected;
+        if (!ppp->copy) {
+            input = restofline(ppp->cl, input);
+            break;
+        }
+        ppp->stack[ppp->level] |= F_Copy;
+        size = getidentifierlength(input);
+        if (!size) {
+            error(errEmptyIf);
+            break;
+        }
+        if (findsymbolinset(ppp->defs, input, NULL))
+            status = statDefined;
+        else if (findsymbolinset(ppp->undefs, input, NULL))
+            status = statUndefined;
+        else
+            status = statUnaffected;
         cmdend = nextchars(ppp->cl, input, size);
         input = skipwhite(ppp->cl, cmdend);
-	if (!endoflinep(ppp->cl)) {
-	    error(errSyntax);
-	    break;
-	}
-	if (status == statUnaffected) {
-	    ppp->absorb = FALSE;
-	    n = ppp->level;
-	    while (ppp->stack[n] & F_Elif) {
-		--n;
-		if (!(ppp->stack[n] & F_Ours)) {
-		    n = -1;
-		    break;
-		}
-	    }
-	    if (n >= 0) {
+        if (!endoflinep(ppp->cl)) {
+            error(errSyntax);
+            break;
+        }
+        if (status == statUnaffected) {
+            ppp->absorb = FALSE;
+            n = ppp->level;
+            while (ppp->stack[n] & F_Elif) {
+                --n;
+                if (!(ppp->stack[n] & F_Ours)) {
+                    n = -1;
+                    break;
+                }
+            }
+            if (n >= 0) {
                 editmstr(ppp->line, cmd, 2, "", 0);
-		ppp->stack[ppp->level] |= F_IfModify;
-	    }
-	} else {
-	    if (id == cmdElifdef)
-		ppp->copy = status == statDefined;
-	    else
-		ppp->copy = status == statUndefined;
-	    ppp->absorb = TRUE;
-	    if (ppp->copy) {
-		n = ppp->level;
-		while (ppp->stack[n] & F_Elif) {
-		    --n;
-		    if (!(ppp->stack[n] & F_Ours)) {
+                ppp->stack[ppp->level] |= F_IfModify;
+            }
+        } else {
+            if (id == cmdElifdef)
+                ppp->copy = status == statDefined;
+            else
+                ppp->copy = status == statUndefined;
+            ppp->absorb = TRUE;
+            if (ppp->copy) {
+                n = ppp->level;
+                while (ppp->stack[n] & F_Elif) {
+                    --n;
+                    if (!(ppp->stack[n] & F_Ours)) {
                         editmstr(ppp->line, cmd, cmdend - cmd, "else", 4);
-			ppp->stack[ppp->level] |= F_ElseModify;
-			ppp->absorb = FALSE;
-			break;
-		    }
-		}
-	    }
-	    ppp->stack[ppp->level] |= F_Ours;
-	}
-	break;
+                        ppp->stack[ppp->level] |= F_ElseModify;
+                        ppp->absorb = FALSE;
+                        break;
+                    }
+                }
+            }
+            ppp->stack[ppp->level] |= F_Ours;
+        }
+        break;
 
       case cmdElif:
-	if (ppp->level < 0 || !(ppp->stack[ppp->level] & F_If)
-			   || (ppp->stack[ppp->level] & F_Else)) {
-	    error(errDanglingElse);
-	    break;
-	} else if (ppp->level + 1 >= sizearray(ppp->stack)) {
-	    error(errIfsTooDeep);
-	    break;
-	}
-	if (ppp->stack[ppp->level] & F_Ifdef)
-	    error(errElifWithIfdef);
-	ppp->stack[ppp->level] |= F_Else;
-	if (ppp->stack[ppp->level] & F_Ours)
-	    ppp->copy = !ppp->copy;
-	++ppp->level;
-	ppp->stack[ppp->level] = F_If | F_Elif | (ppp->copy ? F_Copy : 0);
-	if (!ppp->copy) {
-	    input = restofline(ppp->cl, input);
-	    break;
-	}
-	cmdend = seqif(ppp, (char*)input, &status);
-	if (status == statError)
-	    break;
-	input = skipwhite(ppp->cl, cmdend);
-	if (!endoflinep(ppp->cl)) {
-	    error(errIfSyntax);
-	    break;
-	}
-	if (status == statUndefined) {
-	    ppp->copy = FALSE;
-	    ppp->absorb = TRUE;
-	    ppp->stack[ppp->level] |= F_Ours;
-	} else if (status == statDefined) {
-	    ppp->absorb = TRUE;
-	    n = ppp->level;
-	    while (ppp->stack[n] & F_Elif) {
-		--n;
-		if (!(ppp->stack[n] & F_Ours)) {
+        if (ppp->level < 0 || !(ppp->stack[ppp->level] & F_If)
+                           || (ppp->stack[ppp->level] & F_Else)) {
+            error(errDanglingElse);
+            break;
+        } else if (ppp->level + 1 >= sizearray(ppp->stack)) {
+            error(errIfsTooDeep);
+            break;
+        }
+        if (ppp->stack[ppp->level] & F_Ifdef)
+            error(errElifWithIfdef);
+        ppp->stack[ppp->level] |= F_Else;
+        if (ppp->stack[ppp->level] & F_Ours)
+            ppp->copy = !ppp->copy;
+        ++ppp->level;
+        ppp->stack[ppp->level] = F_If | F_Elif | (ppp->copy ? F_Copy : 0);
+        if (!ppp->copy) {
+            input = restofline(ppp->cl, input);
+            break;
+        }
+        cmdend = seqif(ppp, (char*)input, &status);
+        if (status == statError)
+            break;
+        input = skipwhite(ppp->cl, cmdend);
+        if (!endoflinep(ppp->cl)) {
+            error(errIfSyntax);
+            break;
+        }
+        if (status == statUndefined) {
+            ppp->copy = FALSE;
+            ppp->absorb = TRUE;
+            ppp->stack[ppp->level] |= F_Ours;
+        } else if (status == statDefined) {
+            ppp->absorb = TRUE;
+            n = ppp->level;
+            while (ppp->stack[n] & F_Elif) {
+                --n;
+                if (!(ppp->stack[n] & F_Ours)) {
                     editmstr(ppp->line, cmd, cmdend - cmd, "else", 4);
-		    ppp->stack[ppp->level] |= F_ElseModify;
-		    ppp->absorb = FALSE;
-		    break;
-		}
-	    }
-	    ppp->stack[ppp->level] |= F_Ours;
-	} else {
-	    n = ppp->level;
-	    while (ppp->stack[n] & F_Elif) {
-		--n;
-		if (!(ppp->stack[n] & F_Ours)) {
-		    n = -1;
-		    break;
-		}
-	    }
-	    if (n >= 0) {
+                    ppp->stack[ppp->level] |= F_ElseModify;
+                    ppp->absorb = FALSE;
+                    break;
+                }
+            }
+            ppp->stack[ppp->level] |= F_Ours;
+        } else {
+            n = ppp->level;
+            while (ppp->stack[n] & F_Elif) {
+                --n;
+                if (!(ppp->stack[n] & F_Ours)) {
+                    n = -1;
+                    break;
+                }
+            }
+            if (n >= 0) {
                 editmstr(ppp->line, cmd, 2, "", 0);
-		ppp->stack[ppp->level] |= F_IfModify;
-	    }
-	}
-	break;
+                ppp->stack[ppp->level] |= F_IfModify;
+            }
+        }
+        break;
 
       case cmdEndif:
-	if (ppp->level < 0) {
-	    error(errDanglingEnd);
-	    break;
-	}
+        if (ppp->level < 0) {
+            error(errDanglingEnd);
+            break;
+        }
         cmdend = input;
-	if (!endoflinep(ppp->cl)) {
-	    error(errSyntax);
-	    input = restofline(ppp->cl, input);
-	}
-	ppp->absorb = TRUE;
-	for ( ; ppp->stack[ppp->level] & F_Elif ; --ppp->level) {
-	    if (ppp->stack[ppp->level] & (F_IfModify | F_ElseModify))
-		ppp->absorb = FALSE;
-	}
-	if (ppp->absorb)
-	    ppp->absorb = ppp->stack[ppp->level] & F_Ours;
-	ppp->copy = ppp->stack[ppp->level] & F_Copy;
-	--ppp->level;
-	break;
+        if (!endoflinep(ppp->cl)) {
+            error(errSyntax);
+            input = restofline(ppp->cl, input);
+        }
+        ppp->absorb = TRUE;
+        for ( ; ppp->stack[ppp->level] & F_Elif ; --ppp->level) {
+            if (ppp->stack[ppp->level] & (F_IfModify | F_ElseModify))
+                ppp->absorb = FALSE;
+        }
+        if (ppp->absorb)
+            ppp->absorb = ppp->stack[ppp->level] & F_Ours;
+        ppp->copy = ppp->stack[ppp->level] & F_Copy;
+        --ppp->level;
+        break;
 
       default:
-	input = restofline(ppp->cl, input);
-	break;
+        input = restofline(ppp->cl, input);
+        break;
     }
 
     if (ppp->absorb && incomment != ccommentp(ppp->cl))
-	error(errBrokenComment);
+        error(errBrokenComment);
 }
 
 /* Reads the next line of source code, and applies the first two
@@ -453,56 +451,56 @@ static int readline(ppproc *ppp, FILE *infile)
 
     ch = fgetc(infile);
     if (ch == EOF)
-	return 0;
+        return 0;
     back2 = EOF;
     back1 = EOF;
     erasemstr(ppp->line);
     while (ch != EOF) {
         appendmstr(ppp->line, ch);
-	if (back2 == '?' && back1 == '?') {
-	    switch (ch) {
-	      case '=':		replacement = '#';	break;
-	      case '(':		replacement = '[';	break;
-	      case '/':		replacement = '\\';	break;
-	      case ')':		replacement = ']';	break;
-	      case '\'':	replacement = '^';	break;
-	      case '<':		replacement = '{';	break;
-	      case '!':		replacement = '|';	break;
-	      case '>':		replacement = '}';	break;
-	      case '-':		replacement = '~';	break;
-	      default:		replacement = 0;	break;
-	    }
-	    if (replacement) {
+        if (back2 == '?' && back1 == '?') {
+            switch (ch) {
+              case '=':         replacement = '#';      break;
+              case '(':         replacement = '[';      break;
+              case '/':         replacement = '\\';     break;
+              case ')':         replacement = ']';      break;
+              case '\'':        replacement = '^';      break;
+              case '<':         replacement = '{';      break;
+              case '!':         replacement = '|';      break;
+              case '>':         replacement = '}';      break;
+              case '-':         replacement = '~';      break;
+              default:          replacement = 0;        break;
+            }
+            if (replacement) {
                 p = getmstrbuf(ppp->line) + getmstrlen(ppp->line);
                 altermstr(ppp->line, p - 3, 3, replacement);
-		ch = replacement;
-		back1 = back2 = EOF;
-	    }
-	}
-	if (back1 == '\r' && ch == '\n') {
+                ch = replacement;
+                back1 = back2 = EOF;
+            }
+        }
+        if (back1 == '\r' && ch == '\n') {
             p = getmstrbuf(ppp->line) + getmstrlen(ppp->line);
             altermstr(ppp->line, p - 2, 2, '\n');
-	    back1 = back2;
-	    back2 = EOF;
-	}
-	if (ch == '\n') {
-	    if (back1 == '\\') {
+            back1 = back2;
+            back2 = EOF;
+        }
+        if (ch == '\n') {
+            if (back1 == '\\') {
                 p = getmstrbuf(ppp->line) + getmstrlen(ppp->line);
                 altermstr(ppp->line, p - 2, 2, 0);
-		ch = back2;
-		back1 = back2 = EOF;
-	    } else {
-		break;
-	    }
-	}
-	back2 = back1;
-	back1 = ch;
-	ch = fgetc(infile);
+                ch = back2;
+                back1 = back2 = EOF;
+            } else {
+                break;
+            }
+        }
+        back2 = back1;
+        back1 = ch;
+        ch = fgetc(infile);
     }
 
     if (ferror(infile)) {
-	error(errFileIO);
-	return 0;
+        error(errFileIO);
+        return 0;
     }
     return 1;
 }
@@ -516,17 +514,17 @@ static int writeline(ppproc *ppp, FILE *outfile)
     size_t size;
 
     if (!ppp->line)
-	return 1;
+        return 1;
     if (!ppp->copy || ppp->absorb)
-	return 1;
+        return 1;
 
     size = getmstrbaselen(ppp->line);
     if (size) {
-	if (fwrite(getmstrbase(ppp->line), size, 1, outfile) != 1) {
-	    seterrorfile(NULL);
-	    error(errFileIO);
-	    return 0;
-	}
+        if (fwrite(getmstrbase(ppp->line), size, 1, outfile) != 1) {
+            seterrorfile(NULL);
+            error(errFileIO);
+            return 0;
+        }
     }
     return 1;
 }
@@ -539,7 +537,7 @@ static void advanceline(mstr const *line)
     char const *p;
 
     for (p = getmstrbuf(line) - 1 ; p ; p = strchr(p + 1, '\n'))
-	nexterrorline();
+        nexterrorline();
 }
 
 /* Partially preprocesses each line of infile and writes the results
@@ -554,7 +552,7 @@ void partialpreprocess(ppproc *ppp, FILE *infile, FILE *outfile)
         endline(ppp->cl);
         if (!writeline(ppp, outfile))
             break;
-	advanceline(ppp->line);
+        advanceline(ppp->line);
     }
     seterrorline(0);
     endfile(ppp);

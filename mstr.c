@@ -1,9 +1,6 @@
 /* mstr.c: Copyright (C) 2022 by Brian Raiter <breadbox@muppetlabs.com>
  * License GPLv2+: GNU GPL version 2 or later.
- * This is free software; you are free to change and redistribute it.
- * There is NO WARRANTY, to the extent permitted by law.
  */
-
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -14,8 +11,8 @@
 /* Specification of substring.
  */
 typedef struct chspan {
-    int		from;           /* index of start of substring */
-    int		to;             /* first byte past substring */
+    int         from;           /* index of start of substring */
+    int         to;             /* first byte past substring */
 } chspan;
 
 /* A modifiable string with two representations, an editable
@@ -23,12 +20,12 @@ typedef struct chspan {
  */
 struct mstr {
     char       *str;            /* the edited, or "presentation" string */
-    int		length;         /* the length of the string */
-    int		allocated;      /* the size of the string buffer (and spans) */
+    int         length;         /* the length of the string */
+    int         allocated;      /* the size of the string buffer (and spans) */
     chspan     *spans;          /* what substring each char represents */
     char       *basestr;        /* the underlying, or "base" string */
-    int		baselength;     /* the length of the base string */
-    int		baseallocated;  /* the size of the base buffer */
+    int         baselength;     /* the length of the base string */
+    int         baseallocated;  /* the size of the base buffer */
 };
 
 /* Allocates an empty mstr object.
