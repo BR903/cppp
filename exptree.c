@@ -544,6 +544,8 @@ long evaltree(exptree *t, int *defined)
             if (valued) {
                 val2 = evaltree(t->child[2], &valued);
                 valued = valued && val1 == val2;
+            } else {
+                evaltree(t->child[2], NULL);
             }
         }
 	goto done;
@@ -616,19 +618,18 @@ int unparseevaluated(exptree const *t, char *buffer)
 {
     char const *src;
     char *buf;
-    size_t size;
+    int size;
     int n;
 
     if (t->exp == expNone)
 	return 0;
+    if (t->valued)
+        return sprintf(buffer, "%ld", t->value);
+
     if (t->exp != expOperator) {
-	if (t->valued) {
-	    size = sprintf(buffer, "%ld", t->value);
-	} else {
-	    size = getexplength(t);
-	    memcpy(buffer, t->begin, size);
-	}
-	return (int)size;
+        size = getexplength(t);
+        memcpy(buffer, t->begin, size);
+	return size;
     }
     if (t->op == opConditional) {
 	if (t->child[0]->valued)

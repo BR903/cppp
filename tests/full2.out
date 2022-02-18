@@ -5,7 +5,7 @@ one
 /* -Dbaz */
 #if (defined(foo) || defined bar)
 one
-#elif defined foo ? !defined bar : !1
+#elif defined foo ? !defined bar : 0
 three
 #endif
 /* -Ufoo */
@@ -21,7 +21,7 @@ three
 one
 #elif (!defined(foo) && !defined(baz))  // comment
 two
-#elif defined foo ? !0 : !defined baz
+#elif defined foo ? 1 : !defined baz
 three
 #endif
 /* -Ubaz */
@@ -29,7 +29,7 @@ three
 one
 #elif !defined(foo)  // comment
 two
-#elif defined foo ? !defined bar : !0
+#elif defined foo ? !defined bar : 1
 three
 #endif
 /* -Dfoo -Dbar */
@@ -79,7 +79,7 @@ one
 /* -Ubar -Dbaz */
 #if defined(foo)
 one
-#elif defined foo ? !0 : !1
+#elif defined foo ? 1 : 0
 three
 #endif
 /* -Ufoo -Dbar -Dbaz */
