@@ -18,6 +18,8 @@
  * the program's inner loops, even hash tables are overkill here.
  */
 
+typedef struct sym sym;
+
 /* A preprocessor symbol.
  */
 struct sym {
@@ -28,7 +30,7 @@ struct sym {
 /* An unordered collection of symbols.
  */
 struct symset {
-    struct sym *syms;		/* an array of symbols */
+    sym	       *syms;		/* an array of symbols */
     int		allocated;	/* how many entries are allocated */
     int		size;		/* how many entries are currently stored */
 };

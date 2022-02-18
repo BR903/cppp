@@ -20,10 +20,11 @@
 #define	F_In99Comment		0x0020
 #define	F_InAnyComment		0x0030
 #define	F_LeavingComment	0x0040
-#define	F_Whitespace		0x0080
-#define	F_EndOfLine		0x0100
-#define	F_Seen1st		0x0200
-#define	F_Preprocess		0x0400
+#define F_LongChar		0x0080
+#define	F_Whitespace		0x0100
+#define	F_EndOfLine		0x0200
+#define	F_Seen1st		0x0400
+#define	F_Preprocess		0x0800
 
 /* The values that comprise the state of the lexer as it reads the
  * input.
@@ -98,7 +99,7 @@ void endstream(clexer *cl)
 /* Boolean functions that report on various aspects of the lexer's
  * current state.
  */
-int endoflinep(clexer const *cl)	  { return cl->state & F_EndOfLine; }
+int endoflinep(clexer const *cl)   { return cl->state & F_EndOfLine; }
 int whitespacep(clexer const *cl)  { return cl->state & F_Whitespace; }
 int charquotep(clexer const *cl)   { return cl->state & F_InCharQuote; }
 int ccommentp(clexer const *cl)    { return cl->state & F_InComment; }
@@ -222,19 +223,14 @@ char const *examinechar(clexer *cl, char const *input)
 	    readwhack(cl, in);
 	    ++cl->charquote;
 	} else if (*in == '\'') {
-	    if (!cl->charquote) {
+	    if (!cl->charquote)
 		error(errBadCharLiteral);
-		cl->state |= F_EndOfLine;
-		return input;
-	    }
+	    else if (cl->charquote > (cl->state & F_LongChar ? 4 : 1))
+                error(errBadCharLiteral);
 	    cl->state |= F_LeavingCharQuote;
+            cl->state &= ~F_LongChar;
 	} else {
 	    ++cl->charquote;
-	}
-	if (cl->charquote > 2) {		/* optional */
-	    error(errBadCharLiteral);
-	    cl->state |= F_EndOfLine;
-	    return input;
 	}
     } else if (cl->state & F_InString) {
 	if (*in == '\\')
@@ -265,7 +261,7 @@ char const *examinechar(clexer *cl, char const *input)
 	    } else if (*in == 'L') {
 		if (in[1] == '\'') {
 		    ++cl->charcount;
-		    cl->state |= F_InCharQuote;
+		    cl->state |= F_InCharQuote | F_LongChar;
 		    cl->charquote = 0;
 		} else if (in[1] == '"') {
 		    ++cl->charcount;

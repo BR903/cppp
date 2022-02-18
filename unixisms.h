@@ -20,9 +20,13 @@ extern int changedir(char const *name);
 extern int savedir(void);
 
 /* Change back to the directory that was remembered by savedir(). This
- * function must be called before savedir() can be called again.
+ * function may be called repeatedly.
  */
 extern int restoredir(void);
+
+/* Forget the directory remembered by savedir().
+ */
+extern void unsavedir(void);
 
 /* Return true if the given pathname is a directory.
  */

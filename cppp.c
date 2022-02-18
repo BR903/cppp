@@ -18,14 +18,16 @@
 
 /* Online help text.
  */
-static char const *const yowzitch =
+static char const *const yowzitch1 =
     "Usage: cppp [OPTIONS] [SOURCE ... [DEST]]\n"
     "Partially preprocesses C/C++ files, with only specific preprocessor\n"
-    "symbols being defined (and/or undefined).\n\n"
+    "symbols being defined (and/or undefined).\n\n";
+static char const *const yowzitch2 =
     "      -D SYMBOL[=NUMBER]  Preprocess SYMBOL as defined [to NUMBER].\n"
     "      -U SYMBOL           Preprocess SYMBOL as undefined.\n"
     "      --help              Display this help and exit.\n"
-    "      --version           Display version information and exit.\n\n"
+    "      --version           Display version information and exit.\n\n";
+static char const *const yowzitch3 =
     "If DEST is omitted, the resulting source is emitted to standard output.\n"
     "If multiple SOURCE files are specified, the last argument DEST must be\n"
     "a directory.\n";
@@ -81,7 +83,9 @@ static int readcmdline(int argc, char *argv[], symset *defs, symset *undefs)
 	    continue;
 	}
 	if (!strcmp(argv[i], "--help")) {
-	    fputs(yowzitch, stdout);
+	    fputs(yowzitch1, stdout);
+	    fputs(yowzitch2, stdout);
+	    fputs(yowzitch3, stdout);
 	    exit(EXIT_SUCCESS);
 	} else if (!strcmp(argv[i], "--version")) {
 	    fputs(vourzhon, stdout);
@@ -174,6 +178,10 @@ int main(int argc, char *argv[])
 	partialpreprocess(ppp, infile, stdout);
 	fclose(infile);
     } else if (fileisdir(argv[argc - 1])) {
+        if (!savedir()) {
+            perror(".");
+            exit(EXIT_FAILURE);
+        }
 	dirname = argv[argc - 1];
 	for (i = 1 ; i < argc - 1 ; ++i) {
 	    filename = argv[i];
@@ -183,8 +191,7 @@ int main(int argc, char *argv[])
 		exitcode = EXIT_FAILURE;
 		continue;
 	    }
-	    savedir();
-	    if (!changedir(dirname)) {
+            if (!changedir(dirname)) {
 		perror(dirname);
 		exit(EXIT_FAILURE);
 	    }
@@ -200,9 +207,10 @@ int main(int argc, char *argv[])
 		perror(filename);
 		exitcode = EXIT_FAILURE;
 	    }
-	    restoredir();
 	    fclose(infile);
+	    restoredir();
 	}
+        unsavedir();
     } else if (argc == 3) {
 	filename = argv[1];
 	seterrorfile(filename);
