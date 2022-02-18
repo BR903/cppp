@@ -58,18 +58,12 @@ Display help and exit.
 .B \--version
 Display version information and exit.
 .SH BUGS
-.B cppp
-does not recognize identifiers and tokens with escaped line breaks
-embedded.
-.P
-Trigraphs and digraphs are not recognized.
+Comments on edited preprocessor lines are not always preserved.
 .P
 It is possible (using nested preprocessor commands) to produce an
 empty section in the output.
 .B cppp
 does not collapse these.
-.P
-Comments on edited preprocessor lines are not always preserved.
 .SH COPYRIGHT
 Copyright \(co 1995, 1999, 2011 Brian Raiter
 <breadbox@muppetlabs.com>.

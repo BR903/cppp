@@ -1,6 +1,6 @@
 #ifdef foo
 one
-#elifdef bar
+%:elifdef bar  /*digraph*/
 two
 #elifndef baz
 three

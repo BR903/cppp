@@ -9,7 +9,7 @@ six
 /* -Dbar */
 #ifdef foo
 one
-#else
+%:else  /*digraph*/
 two
 #endif
 #ifdef foo
@@ -21,7 +21,7 @@ six
 /* -Dbaz */
 #ifdef foo
 one
-#elifdef bar
+%:elifdef bar  /*digraph*/
 two
 #endif
 #ifdef foo
@@ -33,7 +33,7 @@ six
 #endif
 #endif
 /* -Ufoo */
-#ifdef bar
+%:ifdef bar  /*digraph*/
 two
 #elifndef baz
 three
@@ -51,7 +51,7 @@ five
 /* -Ubaz */
 #ifdef foo
 one
-#elifdef bar
+%:elifdef bar  /*digraph*/
 two
 #else
 three
@@ -79,7 +79,7 @@ six
 /* -Dbar -Dbaz */
 #ifdef foo
 one
-#else
+%:else  /*digraph*/
 two
 #endif
 #ifdef foo
@@ -95,7 +95,7 @@ six
 three
 #endif
 /* -Ufoo -Ubaz */
-#ifdef bar
+%:ifdef bar  /*digraph*/
 two
 #else
 three
@@ -125,7 +125,7 @@ five
 /* -Dbar -Ubaz */
 #ifdef foo
 one
-#else
+%:else  /*digraph*/
 two
 #endif
 #ifdef foo
@@ -138,7 +138,7 @@ five
 /* -Ufoo -Dbar */
 two
 /* -Ufoo -Dbaz */
-#ifdef bar
+%:ifdef bar  /*digraph*/
 two
 #endif
 /* -Ubar -Dbaz */

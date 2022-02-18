@@ -79,23 +79,6 @@ void freeclexer(clexer *cl)
     deallocate(cl);
 }
 
-/* Marks the end of an input file. Final errors are detected and the
- * lexer is re-initialized.
- */
-void endstream(clexer *cl)
-{
-    if (cl->state & F_InCharQuote)
-	error(errOpenCharLiteral);
-    else if (cl->state & F_InString)
-	error(errOpenStringLiteral);
-    else if (cl->state & F_InComment)
-	error(errOpenComment);
-    cl->state = 0;
-    cl->charquote = 0;
-    cl->charcount = 0;
-    cl->parenlevel = 0;
-}
-
 /* Boolean functions that report on various aspects of the lexer's
  * current state.
  */
@@ -170,7 +153,7 @@ static char const *readwhack(clexer *cl, char const *input)
  * correctly identified. The return value is always the same as the
  * second parameter.
  */
-char const *examinechar(clexer *cl, char const *input)
+static char const *examinechar(clexer *cl, char const *input)
 {
     char const *in;
 
@@ -188,17 +171,6 @@ char const *examinechar(clexer *cl, char const *input)
 	return input;
     }
     cl->charcount = 1;
-    while (in[0] == '\\') {
-	if (in[1] == '\n') {
-	    in += 2;
-	    cl->charcount += 2;
-	} else if (in[1] == '\r' && in[2] == '\n') {
-	    in += 3;
-	    cl->charcount += 3;
-	} else {
-	    break;
-	}
-    }
     if (!*in || *in == '\n') {
 	cl->state |= F_EndOfLine;
 	cl->state &= ~(F_Whitespace | F_In99Comment | F_Preprocess);
@@ -249,8 +221,12 @@ char const *examinechar(clexer *cl, char const *input)
 	}
 	if (!(cl->state & (F_Whitespace | F_Seen1st))) {
 	    cl->state |= F_Seen1st;
-	    if (*in == '#')
+	    if (*in == '#') {
 		cl->state |= F_Preprocess;
+            } else if (in[0] == '%' && in[1] == ':') {
+		cl->state |= F_Preprocess;
+                ++cl->charcount;
+            }
 	}
 	if (!(cl->state & F_Whitespace)) {
 	    if (*in == '\'') {
@@ -275,6 +251,14 @@ char const *examinechar(clexer *cl, char const *input)
 	}
     }
     return input;
+}
+
+/* Begin examining a new line of input. The return value is a pointer
+ * to the string buffer containing the line.
+ */
+char const *beginline(clexer *cl, char const *input)
+{
+    return examinechar(cl, input);
 }
 
 /* Advances one character token in the input. Does nothing if the
@@ -345,11 +329,27 @@ char const *getpreprocessorcmd(clexer *cl, char const *line,
     return skipwhite(cl, end);
 }
 
-/* Starts the lexer on a new line of input.
+/* Close the current line of input.
  */
-char const *nextline(clexer *cl, char const *input)
+void endline(clexer *cl)
 {
     cl->state &= ~(F_EndOfLine | F_Seen1st | F_In99Comment | F_Preprocess);
     cl->charcount = 0;
-    return input ? examinechar(cl, input) : NULL;
+}
+
+/* Marks the end of an input file. Final errors are detected and the
+ * lexer is re-initialized.
+ */
+void endstream(clexer *cl)
+{
+    if (cl->state & F_InCharQuote)
+	error(errOpenCharLiteral);
+    else if (cl->state & F_InString)
+	error(errOpenStringLiteral);
+    else if (cl->state & F_InComment)
+	error(errOpenComment);
+    cl->state = 0;
+    cl->charquote = 0;
+    cl->parenlevel = 0;
+    cl->charcount = 0;
 }

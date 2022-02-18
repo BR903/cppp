@@ -106,6 +106,7 @@ misctests
 goodparsingtest tests/good.c
 goodparsingtest tests/lines.c
 badparsingtest tests/bad.c
+goodparsingtest tests/phases.c
 for f in tests/full*.c ; do
   fulltest "$f" "${f%.c}.out"
 done

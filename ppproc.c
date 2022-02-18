@@ -10,6 +10,7 @@
 #include "types.h"
 #include "error.h"
 #include "symset.h"
+#include "mstr.h"
 #include "clexer.h"
 #include "exptree.h"
 #include "ppproc.h"
@@ -42,11 +43,9 @@ struct ppproc {
     clexer     *cl;			/* the lexer */
     symset const *defs;			/* list of defined symbols */
     symset const *undefs;		/* list of undefined symbols */
-    char       *line;			/* the current line of input */
-    int		linealloc;		/* memory allocated for line */
+    mstr       *line;			/* the current line of input */
     int		copy;			/* true if input is going to output */
     int		absorb;			/* true if input is being suppressed */
-    int		endline;		/* false if line has no '\n' at end */
     int		level;			/* current nesting level */
     int		stack[STACK_SIZE];	/* state flags for each level */
 };
@@ -61,8 +60,7 @@ ppproc *initppproc(symset const *defs, symset const *undefs)
     ppp->cl = initclexer();
     ppp->defs = defs;
     ppp->undefs = undefs;
-    ppp->linealloc = 128;
-    ppp->line = allocate(ppp->linealloc);
+    ppp->line = initmstr();
     return ppp;
 }
 
@@ -71,7 +69,7 @@ ppproc *initppproc(symset const *defs, symset const *undefs)
 void freeppproc(ppproc *ppp)
 {
     freeclexer(ppp->cl);
-    deallocate(ppp->line);
+    freemstr(ppp->line);
     deallocate(ppp);
 }
 
@@ -91,7 +89,7 @@ static void endfile(ppproc *ppp)
     endstream(ppp->cl);
     if (ppp->level != -1)
 	error(errOpenIf);
-    ppp->line[0] = '\0';
+    erasemstr(ppp->line);
 }
 
 /* Partially preprocesses a #if expression. ifexp points to the text
@@ -130,8 +128,7 @@ static char const *seqif(ppproc *ppp, char *ifexp, enum status *status)
 	    *status = statPartDefined;
 	    str = allocate(strlen(ifexp) + 1);
 	    n = unparseevaluated(tree, str);
-	    strcpy(str + n, ifexp + getexplength(tree));
-	    strcpy(ifexp, str);
+            ret = editmstr(ppp->line, ifexp, getexplength(tree), str, n) + n;
 	    deallocate(str);
 	}
     }
@@ -150,6 +147,7 @@ static void seq(ppproc *ppp)
 {
     char const *input;
     char const *cmd;
+    char const *cmdend;
     enum status status;
     int incomment;
     enum ppcmd id;
@@ -157,7 +155,7 @@ static void seq(ppproc *ppp)
 
     incomment = ccommentp(ppp->cl);
     ppp->absorb = FALSE;
-    input = examinechar(ppp->cl, ppp->line);
+    input = beginline(ppp->cl, getmstrbuf(ppp->line));
     while (!preproclinep(ppp->cl)) {
 	if (endoflinep(ppp->cl))
 	    return;
@@ -192,7 +190,8 @@ static void seq(ppproc *ppp)
 	    status = statUndefined;
 	else
 	    status = statUnaffected;
-	input = skipwhite(ppp->cl, nextchars(ppp->cl, input, size));
+        cmdend = nextchars(ppp->cl, input, size);
+	input = skipwhite(ppp->cl, cmdend);
 	if (!endoflinep(ppp->cl)) {
 	    error(errSyntax);
 	    break;
@@ -218,10 +217,10 @@ static void seq(ppproc *ppp)
 	    input = restofline(ppp->cl, input);
 	    break;
 	}
-	input = seqif(ppp, (char*)input, &status);
+	cmdend = seqif(ppp, (char*)input, &status);
 	if (status == statError)
 	    break;
-	input = skipwhite(ppp->cl, input);
+	input = skipwhite(ppp->cl, cmdend);
 	if (!endoflinep(ppp->cl)) {
 	    error(errIfSyntax);
 	    break;
@@ -243,6 +242,7 @@ static void seq(ppproc *ppp)
 	    error(errSyntax);
 	    break;
 	}
+        cmdend = input;
 	if (ppp->stack[ppp->level] & F_Ours) {
 	    ppp->copy = !ppp->copy;
 	    ppp->absorb = TRUE;
@@ -287,6 +287,7 @@ static void seq(ppproc *ppp)
 	}
 	++ppp->level;
 	ppp->stack[ppp->level] = F_If | F_Elif | F_Ifdef;
+        cmdend = input;
 	if (!ppp->copy) {
 	    input = restofline(ppp->cl, input);
 	    break;
@@ -303,7 +304,8 @@ static void seq(ppproc *ppp)
 	    status = statUndefined;
 	else
 	    status = statUnaffected;
-	input = skipwhite(ppp->cl, nextchars(ppp->cl, input, size));
+        cmdend = nextchars(ppp->cl, input, size);
+        input = skipwhite(ppp->cl, cmdend);
 	if (!endoflinep(ppp->cl)) {
 	    error(errSyntax);
 	    break;
@@ -319,7 +321,7 @@ static void seq(ppproc *ppp)
 		}
 	    }
 	    if (n >= 0) {
-		memmove((char*)cmd, cmd + 2, strlen(cmd + 2) + 1);
+                editmstr(ppp->line, cmd, 2, "", 0);
 		ppp->stack[ppp->level] |= F_IfModify;
 	    }
 	} else {
@@ -333,7 +335,7 @@ static void seq(ppproc *ppp)
 		while (ppp->stack[n] & F_Elif) {
 		    --n;
 		    if (!(ppp->stack[n] & F_Ours)) {
-			strcpy((char*)cmd, "else");
+                        editmstr(ppp->line, cmd, cmdend - cmd, "else", 4);
 			ppp->stack[ppp->level] |= F_ElseModify;
 			ppp->absorb = FALSE;
 			break;
@@ -364,10 +366,10 @@ static void seq(ppproc *ppp)
 	    input = restofline(ppp->cl, input);
 	    break;
 	}
-	input = seqif(ppp, (char*)input, &status);
+	cmdend = seqif(ppp, (char*)input, &status);
 	if (status == statError)
 	    break;
-	input = skipwhite(ppp->cl, input);
+	input = skipwhite(ppp->cl, cmdend);
 	if (!endoflinep(ppp->cl)) {
 	    error(errIfSyntax);
 	    break;
@@ -382,7 +384,7 @@ static void seq(ppproc *ppp)
 	    while (ppp->stack[n] & F_Elif) {
 		--n;
 		if (!(ppp->stack[n] & F_Ours)) {
-		    strcpy((char*)cmd, "else");
+                    editmstr(ppp->line, cmd, cmdend - cmd, "else", 4);
 		    ppp->stack[ppp->level] |= F_ElseModify;
 		    ppp->absorb = FALSE;
 		    break;
@@ -399,7 +401,7 @@ static void seq(ppproc *ppp)
 		}
 	    }
 	    if (n >= 0) {
-		memmove((char*)cmd, cmd + 2, strlen(cmd + 2) + 1);
+                editmstr(ppp->line, cmd, 2, "", 0);
 		ppp->stack[ppp->level] |= F_IfModify;
 	    }
 	}
@@ -410,6 +412,7 @@ static void seq(ppproc *ppp)
 	    error(errDanglingEnd);
 	    break;
 	}
+        cmdend = input;
 	if (!endoflinep(ppp->cl)) {
 	    error(errSyntax);
 	    input = restofline(ppp->cl, input);
@@ -434,51 +437,73 @@ static void seq(ppproc *ppp)
 	error(errBrokenComment);
 }
 
-/* Reads in one line of source code and run it through the partial
- * preprocessor. The return value is zero if the file has reached the
- * end or if the file can't be read. (Note that the function accepts
- * "\r\n" as being equivalent to "\n".)
+/* Reads the next line of source code, and applies the first two
+ * phases of translation. Phase one is trigraph replacement, and phase
+ * two removes backslash-newline pairs. (This code also provides an
+ * extra in-between step of turning CRLF sequences into simple
+ * newlines.) The resulting line is then ready for the third phase of
+ * translation, namely preprocessing. The return value is zero if the
+ * file has already reached the end or if the file can't be read from.
  */
 static int readline(ppproc *ppp, FILE *infile)
 {
-    int size;
-    int prev, ch;
+    char const *p;
+    int replacement;
+    int back2, back1, ch;
 
     ch = fgetc(infile);
     if (ch == EOF)
 	return 0;
-    prev = EOF;
-    for (size = 0 ; ch != EOF ; ++size) {
-	if (ch == '\r') {
-	    ch = fgetc(infile);
-	    if (ch == '\n') {
-		ppp->line[size] = '\r';
-		++size;
-	    } else {
-		ungetc(ch, infile);
-		ch = '\r';
+    back2 = EOF;
+    back1 = EOF;
+    erasemstr(ppp->line);
+    while (ch != EOF) {
+        appendmstr(ppp->line, ch);
+	if (back2 == '?' && back1 == '?') {
+	    switch (ch) {
+	      case '=':		replacement = '#';	break;
+	      case '(':		replacement = '[';	break;
+	      case '/':		replacement = '\\';	break;
+	      case ')':		replacement = ']';	break;
+	      case '\'':	replacement = '^';	break;
+	      case '<':		replacement = '{';	break;
+	      case '!':		replacement = '|';	break;
+	      case '>':		replacement = '}';	break;
+	      case '-':		replacement = '~';	break;
+	      default:		replacement = 0;	break;
+	    }
+	    if (replacement) {
+                p = getmstrbuf(ppp->line) + getmstrlen(ppp->line);
+                altermstr(ppp->line, p - 3, 3, replacement);
+		ch = replacement;
+		back1 = back2 = EOF;
 	    }
 	}
-	if (ch == '\n' && prev != '\\')
-	    break;
-	if (size + 2 >= ppp->linealloc) {
-	    ppp->linealloc *= 2;
-	    ppp->line = reallocate(ppp->line, ppp->linealloc);
+	if (back1 == '\r' && ch == '\n') {
+            p = getmstrbuf(ppp->line) + getmstrlen(ppp->line);
+            altermstr(ppp->line, p - 2, 2, '\n');
+	    back1 = back2;
+	    back2 = EOF;
 	}
-	ppp->line[size] = ch;
-	prev = ch;
+	if (ch == '\n') {
+	    if (back1 == '\\') {
+                p = getmstrbuf(ppp->line) + getmstrlen(ppp->line);
+                altermstr(ppp->line, p - 2, 2, 0);
+		ch = back2;
+		back1 = back2 = EOF;
+	    } else {
+		break;
+	    }
+	}
+	back2 = back1;
+	back1 = ch;
 	ch = fgetc(infile);
     }
+
     if (ferror(infile)) {
 	error(errFileIO);
 	return 0;
     }
-    ppp->endline = ch != EOF;
-    ppp->line[size] = '\0';
-
-    seq(ppp);
-
-    nextline(ppp->cl, NULL);
     return 1;
 }
 
@@ -495,39 +520,42 @@ static int writeline(ppproc *ppp, FILE *outfile)
     if (!ppp->copy || ppp->absorb)
 	return 1;
 
-    size = strlen(ppp->line);
+    size = getmstrbaselen(ppp->line);
     if (size) {
-	if (fwrite(ppp->line, size, 1, outfile) != 1) {
+	if (fwrite(getmstrbase(ppp->line), size, 1, outfile) != 1) {
 	    seterrorfile(NULL);
 	    error(errFileIO);
 	    return 0;
 	}
     }
-    if (ppp->endline)
-	fputc('\n', outfile);
-    ppp->endline = FALSE;
     return 1;
 }
 
 /* Increments the line number count, checking for embedded line break
  * characters.
  */
-static void advanceline(char const *line)
+static void advanceline(mstr const *line)
 {
     char const *p;
 
-    for (p = line - 1 ; p ; p = strchr(p + 1, '\n'))
+    for (p = getmstrbuf(line) - 1 ; p ; p = strchr(p + 1, '\n'))
 	nexterrorline();
 }
 
-/* Partially preprocesses the contents of infile to outfile.
+/* Partially preprocesses each line of infile and writes the results
+ * to outfile.
  */
 void partialpreprocess(ppproc *ppp, FILE *infile, FILE *outfile)
 {
     beginfile(ppp);
     seterrorline(1);
-    while (readline(ppp, infile) && writeline(ppp, outfile))
+    while (readline(ppp, infile)) {
+        seq(ppp);
+        endline(ppp->cl);
+        if (!writeline(ppp, outfile))
+            break;
 	advanceline(ppp->line);
+    }
     seterrorline(0);
     endfile(ppp);
 }

@@ -55,10 +55,11 @@ extern int preproclinep(clexer const *cl);
  */
 extern int getparenlevel(clexer const *cl);
 
-/* Examines the next character in the given line of input, and updates
- * state as necessary.
+/* Begins lexing a new line of input. The return value is a pointer to
+ * the string buffer containing the line, which can be used as inputs
+ * to the functions below.
  */
-extern char const *examinechar(clexer *cl, char const *input);
+extern char const *beginline(clexer *cl, char const *line);
 
 /* Examines the first character token in input, and returns a pointer
  * to the byte immediately following.
@@ -96,5 +97,14 @@ extern void endstream(clexer *cl);
  */
 extern char const *getpreprocessorcmd(clexer *cl, char const *input,
 				      enum ppcmd *cmdid);
+
+/* Mark the end of the current line of input. This function should be
+ * called before the next call to beginline().
+ */
+extern void endline(clexer *cl);
+
+/* Mark the end of the current input file.
+ */
+extern void endstream(clexer *cl);
 
 #endif
