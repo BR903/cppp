@@ -13,20 +13,20 @@
  * contain.
  */
 
-struct ppproc;
-struct symset;
+#include <stdio.h>
+#include "types.h"
 
 /* Creates a ppproc object initialized with pre-defined sets of defined
  * and undefined symbols.
  */
-extern struct ppproc *initppproc(struct symset *defs, struct symset *undefs);
+extern ppproc *initppproc(symset const *defs, symset const *undefs);
 
 /* Deallocates the ppproc object.
  */
-extern void freeppproc(struct ppproc *ppp);
+extern void freeppproc(ppproc *ppp);
 
 /* Partially preprocesses infile's contents to outfile.
  */
-extern void partialpreprocess(struct ppproc *ppp, void *infile, void *outfile);
+extern void partialpreprocess(ppproc *ppp, FILE *infile, FILE *outfile);
 
 #endif

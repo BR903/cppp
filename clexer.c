@@ -6,6 +6,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "gen.h"
+#include "types.h"
 #include "error.h"
 #include "clexer.h"
 
@@ -58,9 +59,9 @@ static struct ppstatement const ppstatements[] = {
 
 /* Creates a C lexer object.
  */
-struct clexer *initclexer(void)
+clexer *initclexer(void)
 {
-    struct clexer *cl;
+    clexer *cl;
 
     cl = allocate(sizeof *cl);
     cl->state = 0;
@@ -72,7 +73,7 @@ struct clexer *initclexer(void)
 
 /* Deletes a C lexer object.
  */
-void freeclexer(struct clexer *cl)
+void freeclexer(clexer *cl)
 {
     deallocate(cl);
 }
@@ -80,7 +81,7 @@ void freeclexer(struct clexer *cl)
 /* Marks the end of an input file. Final errors are detected and the
  * lexer is re-initialized.
  */
-void endstream(struct clexer *cl)
+void endstream(clexer *cl)
 {
     if (cl->state & F_InCharQuote)
 	error(errOpenCharLiteral);
@@ -97,15 +98,15 @@ void endstream(struct clexer *cl)
 /* Boolean functions that report on various aspects of the lexer's
  * current state.
  */
-int endoflinep(struct clexer const *cl)	  { return cl->state & F_EndOfLine; }
-int whitespacep(struct clexer const *cl)  { return cl->state & F_Whitespace; }
-int charquotep(struct clexer const *cl)   { return cl->state & F_InCharQuote; }
-int ccommentp(struct clexer const *cl)    { return cl->state & F_InComment; }
-int preproclinep(struct clexer const *cl) { return cl->state & F_Preprocess; }
+int endoflinep(clexer const *cl)	  { return cl->state & F_EndOfLine; }
+int whitespacep(clexer const *cl)  { return cl->state & F_Whitespace; }
+int charquotep(clexer const *cl)   { return cl->state & F_InCharQuote; }
+int ccommentp(clexer const *cl)    { return cl->state & F_InComment; }
+int preproclinep(clexer const *cl) { return cl->state & F_Preprocess; }
 
 /* Returns the current parenthesis nesting level.
  */
-int getparenlevel(struct clexer const *cl) { return cl->parenlevel; }
+int getparenlevel(clexer const *cl) { return cl->parenlevel; }
 
 /* Returns the length of the identifier at the given position.
  */
@@ -119,7 +120,7 @@ int getidentifierlength(char const *input)
 
 /* Reads past an escape sequence.
  */
-static char const *readwhack(struct clexer *cl, char const *input)
+static char const *readwhack(clexer *cl, char const *input)
 {
     int n;
 
@@ -168,7 +169,7 @@ static char const *readwhack(struct clexer *cl, char const *input)
  * correctly identified. The return value is always the same as the
  * second parameter.
  */
-char const *examinechar(struct clexer *cl, char const *input)
+char const *examinechar(clexer *cl, char const *input)
 {
     char const *in;
 
@@ -283,14 +284,14 @@ char const *examinechar(struct clexer *cl, char const *input)
 /* Advances one character token in the input. Does nothing if the
  * lexer has already reached the end of the current line.
  */
-char const *nextchar(struct clexer *cl, char const *input)
+char const *nextchar(clexer *cl, char const *input)
 {
     return endoflinep(cl) ? input : examinechar(cl, input + cl->charcount);
 }
 
 /* Advances n character tokens in the input.
  */
-char const *nextchars(struct clexer *cl, char const *input, int n)
+char const *nextchars(clexer *cl, char const *input, int n)
 {
     for ( ; n && !endoflinep(cl) ; --n)
 	input = examinechar(cl, input + cl->charcount);
@@ -299,7 +300,7 @@ char const *nextchars(struct clexer *cl, char const *input, int n)
 
 /* Advances past any whitespace at the current position.
  */
-char const *skipwhite(struct clexer *cl, char const *input)
+char const *skipwhite(clexer *cl, char const *input)
 {
     for ( ; whitespacep(cl) ; input = nextchar(cl, input)) ;
     return input;
@@ -307,7 +308,7 @@ char const *skipwhite(struct clexer *cl, char const *input)
 
 /* Advances to the end of the current line.
  */
-char const *restofline(struct clexer *cl, char const *input)
+char const *restofline(clexer *cl, char const *input)
 {
     while (!endoflinep(cl))
 	input = nextchar(cl, input);
@@ -317,7 +318,7 @@ char const *restofline(struct clexer *cl, char const *input)
 /* Advances past the preprocessor statement at the current position,
  * and returns the statement type in cmdid.
  */
-char const *getpreprocessorcmd(struct clexer *cl, char const *line,
+char const *getpreprocessorcmd(clexer *cl, char const *line,
 			       enum ppcmd *cmdid)
 {
     char const *begin, *end;
@@ -350,7 +351,7 @@ char const *getpreprocessorcmd(struct clexer *cl, char const *line,
 
 /* Starts the lexer on a new line of input.
  */
-char const *nextline(struct clexer *cl, char const *input)
+char const *nextline(clexer *cl, char const *input)
 {
     cl->state &= ~(F_EndOfLine | F_Seen1st | F_In99Comment | F_Preprocess);
     cl->charcount = 0;

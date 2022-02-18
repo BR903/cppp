@@ -8,6 +8,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "gen.h"
+#include "types.h"
 #include "error.h"
 #include "symset.h"
 #include "clexer.h"
@@ -45,15 +46,15 @@ enum op
 /* The representation of a parsed expresssion tree.
  */
 struct exptree {
-    char const	   *begin;	/* start of the expression in the source */
-    char const     *end;	/* end of the expression */
-    int		    valued;	/* true if it has a definite value */
-    long	    value;	/* the expression's value, if it has one */
-    enum exp	    exp;	/* the type of expression */
-    enum op	    op;		/* the operator for this expression, if any */
-    char const	   *identifier;	/* the identifer, for the defined operator */
-    int		    childcount;	/* how many subexpressions are present */
-    struct exptree *child[4];	/* pointers to the subexpressions */
+    char const *begin;		/* start of the expression in the source */
+    char const *end;		/* end of the expression */
+    int		valued;		/* true if it has a definite value */
+    long	value;		/* the expression's value, if it has one */
+    enum exp	exp;    	/* the type of expression */
+    enum op	op;		/* the operator for this expression, if any */
+    char const *identifier;	/* the identifer, for the defined operator */
+    int		childcount;	/* how many subexpressions are present */
+    exptree    *child[4];	/* pointers to the subexpressions */
 };
 
 /*
@@ -100,9 +101,9 @@ static struct opinfo const infixops[] = {
 
 /* Allocates an expression tree.
  */
-struct exptree *initexptree(void)
+exptree *initexptree(void)
 {
-    struct exptree *t;
+    exptree *t;
 
     t = allocate(sizeof *t);
     t->childcount = 0;
@@ -115,7 +116,7 @@ struct exptree *initexptree(void)
 
 /* Deallocates the expression tree.
  */
-void freeexptree(struct exptree *t)
+void freeexptree(exptree *t)
 {
     int n;
 
@@ -128,7 +129,7 @@ void freeexptree(struct exptree *t)
 
 /* Resets an expression tree to be empty.
  */
-void clearexptree(struct exptree *t)
+void clearexptree(exptree *t)
 {
     t->childcount = 0;
     t->exp = expNone;
@@ -139,7 +140,7 @@ void clearexptree(struct exptree *t)
 
 /* Returns the length of the C source representing the expression.
  */
-int getexplength(struct exptree const *t)
+int getexplength(exptree const *t)
 {
     return t->exp == expNone ? 0 : (int)(t->end - t->begin);
 }
@@ -147,7 +148,7 @@ int getexplength(struct exptree const *t)
 /* Inserts a subtree into the given expression tree, with pos being
  * the index of where to add the child branch.
  */
-static int addchild(struct exptree *t, struct exptree *sub, int pos)
+static int addchild(exptree *t, exptree *sub, int pos)
 {
     int n;
 
@@ -170,9 +171,9 @@ static int addchild(struct exptree *t, struct exptree *sub, int pos)
 /* Creates and returns a new subtree, with pos being the index of
  * which child branch to insert the new subtree at.
  */
-static struct exptree *addnewchild(struct exptree *t, int pos)
+static exptree *addnewchild(exptree *t, int pos)
 {
-    struct exptree *child;
+    exptree *child;
 
     child = initexptree();
     if (!addchild(t, child, pos)) {
@@ -234,8 +235,7 @@ static int getcharconstant(char const *input)
  * constants by this function. The return value is the text following
  * the constant.
  */
-static char const *parseconstant(struct exptree *t, struct clexer *cl,
-				 char const *input)
+static char const *parseconstant(exptree *t, clexer *cl, char const *input)
 {
     char *p;
     int size, paren, mark;
@@ -352,10 +352,10 @@ static char const *parseconstant(struct exptree *t, struct clexer *cl,
  * The return value points to the source immediately following the
  * parsed expression.
  */
-static char const *parseexp(struct exptree *t, struct clexer *cl,
-			    char const *input, int prec)
+static char const *parseexp(exptree *t, clexer *cl, char const *input,
+                            int prec)
 {
-    struct exptree *x;
+    exptree *x;
     char const *tmp;
     int found, n;
 
@@ -462,8 +462,7 @@ static char const *parseexp(struct exptree *t, struct clexer *cl,
 
 /* Parses a C preprocessor expression.
  */
-char const *parseexptree(struct exptree *t, struct clexer *cl,
-			 char const *input)
+char const *parseexptree(exptree *t, clexer *cl, char const *input)
 {
     return parseexp(t, cl, input, 0);
 }
@@ -473,7 +472,7 @@ char const *parseexptree(struct exptree *t, struct clexer *cl,
  * The third parameter indicates whether the identifiers are to be
  * treated as defined or as undefined.
  */
-int markdefined(struct exptree *t, struct symset *set, int defined)
+int markdefined(exptree *t, symset const *set, int defined)
 {
     long value;
     int count, n;
@@ -504,7 +503,7 @@ int markdefined(struct exptree *t, struct symset *set, int defined)
  * indicating whether or not the expression has a definite value. If
  * defined receives true, the actual value is returned.
  */
-long evaltree(struct exptree *t, int *defined)
+long evaltree(exptree *t, int *defined)
 {
     long val1, val2;
     int valued;
@@ -606,7 +605,7 @@ long evaltree(struct exptree *t, int *defined)
  * defined value, and "unparses" that back into a C preprocessor
  * expression, storing the resulting source code in buffer.
  */
-int unparseevaluated(struct exptree const *t, char *buffer)
+int unparseevaluated(exptree const *t, char *buffer)
 {
     char const *src;
     char *buf;

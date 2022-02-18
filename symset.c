@@ -7,6 +7,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "gen.h"
+#include "types.h"
 #include "symset.h"
 
 /*
@@ -34,9 +35,9 @@ struct symset {
 
 /* Allocate a new symset.
  */
-struct symset *initsymset(void)
+symset *initsymset(void)
 {
-    struct symset *set;
+    symset *set;
 
     set = allocate(sizeof *set);
     set->syms = allocate(sizeof *set->syms);
@@ -47,7 +48,7 @@ struct symset *initsymset(void)
 
 /* Deallocate an symset.
  */
-void freesymset(struct symset *set)
+void freesymset(symset *set)
 {
     if (set) {
 	deallocate(set->syms);
@@ -57,7 +58,7 @@ void freesymset(struct symset *set)
 
 /* Append a symbol to a set.
  */
-void addsymboltoset(struct symset *set, char const *id, long value)
+void addsymboltoset(symset *set, char const *id, long value)
 {
     if (set->size == set->allocated) {
 	set->allocated *= 2;
@@ -90,7 +91,7 @@ static int idcmp(char const *a, char const *b)
 
 /* Retrieve the value of a symbol.
  */
-int findsymbolinset(struct symset const *set, char const *id, long *value)
+int findsymbolinset(symset const *set, char const *id, long *value)
 {
     int i;
 
@@ -108,7 +109,7 @@ int findsymbolinset(struct symset const *set, char const *id, long *value)
 
 /* Remove a symbol from a set.
  */
-int removesymbolfromset(struct symset *set, char const *id)
+int removesymbolfromset(symset *set, char const *id)
 {
     int i;
 

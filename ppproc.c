@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "gen.h"
+#include "types.h"
 #include "error.h"
 #include "symset.h"
 #include "clexer.h"
@@ -38,23 +39,23 @@ enum status
 /* The partial preprocessor.
  */
 struct ppproc {
-    struct clexer  *cl;			/* the lexer */
-    struct symset  *defs;		/* list of defined symbols */
-    struct symset  *undefs;		/* list of undefined symbols */
-    char	   *line;		/* the current line of input */
-    int		    linealloc;		/* memory allocated for line */
-    int		    copy;		/* true if input is going to output */
-    int		    absorb;		/* true if input is being suppressed */
-    int		    endline;		/* false if line has no '\n' at end */
-    int		    level;		/* current nesting level */
-    int		    stack[STACK_SIZE];	/* state flags for each level */
+    clexer     *cl;			/* the lexer */
+    symset const *defs;			/* list of defined symbols */
+    symset const *undefs;		/* list of undefined symbols */
+    char       *line;			/* the current line of input */
+    int		linealloc;		/* memory allocated for line */
+    int		copy;			/* true if input is going to output */
+    int		absorb;			/* true if input is being suppressed */
+    int		endline;		/* false if line has no '\n' at end */
+    int		level;			/* current nesting level */
+    int		stack[STACK_SIZE];	/* state flags for each level */
 };
 
 /* Allocates a partial preprocessor object.
  */
-struct ppproc *initppproc(struct symset *defs, struct symset *undefs)
+ppproc *initppproc(symset const *defs, symset const *undefs)
 {
-    struct ppproc *ppp;
+    ppproc *ppp;
 
     ppp = allocate(sizeof *ppp);
     ppp->cl = initclexer();
@@ -67,7 +68,7 @@ struct ppproc *initppproc(struct symset *defs, struct symset *undefs)
 
 /* Deallocates the partial preprocessor object.
  */
-void freeppproc(struct ppproc *ppp)
+void freeppproc(ppproc *ppp)
 {
     freeclexer(ppp->cl);
     deallocate(ppp->line);
@@ -76,7 +77,7 @@ void freeppproc(struct ppproc *ppp)
 
 /* Set the state appropriate for the beginning of a file.
  */
-static void beginfile(struct ppproc *ppp)
+static void beginfile(ppproc *ppp)
 {
     ppp->level = -1;
     ppp->copy = TRUE;
@@ -85,7 +86,7 @@ static void beginfile(struct ppproc *ppp)
 
 /* Mark the ppproc as having reached the end of the current file.
  */
-static void endfile(struct ppproc *ppp)
+static void endfile(ppproc *ppp)
 {
     endstream(ppp->cl);
     if (ppp->level != -1)
@@ -104,9 +105,9 @@ static void endfile(struct ppproc *ppp)
  * statPartDefined, and the original string is modified so as to
  * remove the parts of the expression that have a defined state.
  */
-static char const *seqif(struct ppproc *ppp, char *ifexp, enum status *status)
+static char const *seqif(ppproc *ppp, char *ifexp, enum status *status)
 {
-    struct exptree *tree;
+    exptree *tree;
     char const *ret;
     char *str;
     int defined, n;
@@ -145,7 +146,7 @@ static char const *seqif(struct ppproc *ppp, char *ifexp, enum status *status)
  * to reflect the current section, and if necessary the line of input
  * will be altered for output. This is where the sausage is made.
  */
-static void seq(struct ppproc *ppp)
+static void seq(ppproc *ppp)
 {
     char const *input;
     char const *cmd;
@@ -438,7 +439,7 @@ static void seq(struct ppproc *ppp)
  * end or if the file can't be read. (Note that the function accepts
  * "\r\n" as being equivalent to "\n".)
  */
-static int readline(struct ppproc *ppp, FILE *infile)
+static int readline(ppproc *ppp, FILE *infile)
 {
     int size;
     int prev, ch;
@@ -485,7 +486,7 @@ static int readline(struct ppproc *ppp, FILE *infile)
  * assuming anything is left to be output. The return value is false
  * if an error occurs.
  */
-static int writeline(struct ppproc *ppp, FILE *outfile)
+static int writeline(ppproc *ppp, FILE *outfile)
 {
     size_t size;
 
@@ -521,7 +522,7 @@ static void advanceline(char const *line)
 
 /* Partially preprocesses the contents of infile to outfile.
  */
-void partialpreprocess(struct ppproc *ppp, void *infile, void *outfile)
+void partialpreprocess(ppproc *ppp, FILE *infile, FILE *outfile)
 {
     beginfile(ppp);
     seterrorline(1);

@@ -20,7 +20,7 @@ struct errhandler {
 
 /* There is only one error handler for the program.
  */
-struct errhandler err;
+static struct errhandler err;
 
 /* Sets the name of the file to report errors for.
  */

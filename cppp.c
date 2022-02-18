@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include "gen.h"
+#include "types.h"
 #include "unixisms.h"
 #include "error.h"
 #include "symset.h"
@@ -68,9 +69,7 @@ static void fail(char const *fmt, ...)
  * the input/output files are left in argv. The return value is the
  * new value for argc.
  */
-static int readcmdline(int argc, char *argv[],
-		       struct symset *defs,
-		       struct symset *undefs)
+static int readcmdline(int argc, char *argv[], symset *defs, symset *undefs)
 {
     char *arg, *p;
     long value;
@@ -149,8 +148,8 @@ int main(int argc, char *argv[])
 {
     FILE *infile, *outfile;
     char const *filename, *dirname;
-    struct symset *defs, *undefs;
-    struct ppproc *ppp;
+    symset *defs, *undefs;
+    ppproc *ppp;
     int exitcode;
     int i;
 

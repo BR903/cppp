@@ -12,33 +12,30 @@
  * and to a limited degree edited.
  */
 
-struct exptree;
-struct symset;
-struct clexer;
+#include "types.h"
 
 /* Allocates an expression tree.
  */
-extern struct exptree *initexptree(void);
+extern exptree *initexptree(void);
 
 /* Deallocates the expression tree.
  */
-extern void freeexptree(struct exptree *t);
+extern void freeexptree(exptree *t);
 
 /* Resets an exptree back to its initial state.
  */
-extern void clearexptree(struct exptree *t);
+extern void clearexptree(exptree *t);
 
 /* Returns the length of the expression inside the string.
  */
-extern int getexplength(struct exptree const *t);
+extern int getexplength(exptree const *t);
 
 /* Parses a C expression into an expression tree. exp points to the
  * expression to parse, potentially embedded inside of a larger
  * string, and cl provides a lexer initialized to exp's position. The
  * return value points to the bytes following the parsed expression.
  */
-extern char const *parseexptree(struct exptree *t, struct clexer *cl,
-				char const *input);
+extern char const *parseexptree(exptree *t, clexer *cl, char const *input);
 
 /* Runs through the parsed expression and marks all of the identifiers
  * that appear in set as having a specific definition state, either
@@ -47,14 +44,14 @@ extern char const *parseexptree(struct exptree *t, struct clexer *cl,
  * themselves considered definite.) The return value is true if any
  * identifiers in set were found in the expression tree.
  */
-extern int markdefined(struct exptree *t, struct symset *set, int defined);
+extern int markdefined(exptree *t, symset const *set, int defined);
 
 /* Attempts to evaluate the parsed expression's value. If the
  * expression has a definite value, it is returned and defined
  * receives a true value. If some or all of the expression lacks a
  * definition state, defined receives a false value.
  */
-extern long evaltree(struct exptree *t, int *defined);
+extern long evaltree(exptree *t, int *defined);
 
 /* Copy into buffer the part of the parsed expression that lacks a
  * definition state. Any sub-expressions that have a definite value
@@ -62,6 +59,6 @@ extern long evaltree(struct exptree *t, int *defined);
  * the length of the string written to buffer. This string is
  * guaranteed not to be longer than the original parsed expression.
  */
-extern int unparseevaluated(struct exptree const *t, char *buffer);
+extern int unparseevaluated(exptree const *t, char *buffer);
 
 #endif

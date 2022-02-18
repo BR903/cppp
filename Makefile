@@ -19,11 +19,11 @@ cppp: $(OBJLIST)
 gen.o     : gen.c gen.h
 unixisms.o: unixisms.c unixisms.h
 error.o   : error.c error.h gen.h
-symset.o  : symset.c symset.h gen.h
-clexer.o  : clexer.c clexer.h gen.h error.h
-exptree.o : exptree.c exptree.h gen.h error.h symset.h clexer.h
-ppproc.o  : ppproc.c ppproc.h gen.h error.h symset.h clexer.h exptree.h
-cppp.o    : cppp.c gen.h unixisms.h error.h symset.h ppproc.h
+symset.o  : symset.c symset.h gen.h types.h
+clexer.o  : clexer.c clexer.h gen.h types.h error.h
+exptree.o : exptree.c exptree.h gen.h types.h error.h symset.h clexer.h
+ppproc.o  : ppproc.c ppproc.h gen.h types.h error.h symset.h clexer.h exptree.h
+cppp.o    : cppp.c gen.h types.h unixisms.h error.h symset.h ppproc.h
 
 install:
 	cp ./cppp $(prefix)/bin/.

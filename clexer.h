@@ -13,7 +13,7 @@
  * advancing it through each character of input.
  */
 
-struct clexer;
+#include "types.h"
 
 /* A list of identifiers for the preprocessor commands that the
  * program cares about.
@@ -36,65 +36,65 @@ extern int getidentifierlength(char const *input);
 
 /* Creates a new C lexer.
  */
-extern struct clexer *initclexer(void);
+extern clexer *initclexer(void);
 
 /* Deallocates a lexer.
  */
-extern void freeclexer(struct clexer *cl);
+extern void freeclexer(clexer *cl);
 
 /* These functions all return true or false depending on what the
  * lexer has last examined.
  */
-extern int endoflinep(struct clexer const *cl);
-extern int whitespacep(struct clexer const *cl);
-extern int charquotep(struct clexer const *cl);
-extern int ccommentp(struct clexer const *cl);
-extern int preproclinep(struct clexer const *cl);
+extern int endoflinep(clexer const *cl);
+extern int whitespacep(clexer const *cl);
+extern int charquotep(clexer const *cl);
+extern int ccommentp(clexer const *cl);
+extern int preproclinep(clexer const *cl);
 
 /* Returns the current number of nested parentheses.
  */
-extern int getparenlevel(struct clexer const *cl);
+extern int getparenlevel(clexer const *cl);
 
 /* Examines the next character in the given line of input, and updates
  * state as necessary.
  */
-extern char const *examinechar(struct clexer *cl, char const *input);
+extern char const *examinechar(clexer *cl, char const *input);
 
 /* Examines the first character token in input, and returns a pointer
  * to the byte immediately following.
  */
-extern char const *nextchar(struct clexer *cl, char const *input);
+extern char const *nextchar(clexer *cl, char const *input);
 
 /* Examines n character tokens in input, updating state along the way,
  * and returns a pointer to the byte immediately following them.
  */
-extern char const *nextchars(struct clexer *cl, char const *input, int skip);
+extern char const *nextchars(clexer *cl, char const *input, int skip);
 
 /* Examines all character tokens in input until reaching the end of
  * the line.
  */
-extern char const *restofline(struct clexer *cl, char const *input);
+extern char const *restofline(clexer *cl, char const *input);
 
 /* Examines characters tokens until a non-whitespace character is
  * found.
  */
-extern char const *skipwhite(struct clexer *cl, char const *input);
+extern char const *skipwhite(clexer *cl, char const *input);
 
 /* Mark the beginning of a new line. If input is not null, it will
  * be used as the new line; otherwise, the lexer will take the next
  * input as the beginning of the new line.
  */
-extern char const *nextline(struct clexer *cl, char const *input);
+extern char const *nextline(clexer *cl, char const *input);
 
 /* Mark the end of the current input file.
  */
-extern void endstream(struct clexer *cl);
+extern void endstream(clexer *cl);
 
 /* Examines character tokens until the end of the preprocessor
  * statement is found. The value identifying the preprocessor statement
  * is returned via cmdid.
  */
-extern char const *getpreprocessorcmd(struct clexer *cl, char const *input,
+extern char const *getpreprocessorcmd(clexer *cl, char const *input,
 				      enum ppcmd *cmdid);
 
 #endif
