@@ -537,8 +537,15 @@ long evaltree(exptree *t, int *defined)
 	val1 = evaltree(t->child[1], &valued);
 	goto done;
     } else if (t->op == opConditional) {
-	if (valued)
+	if (valued) {
 	    val1 = evaltree(t->child[val1 ? 1 : 2], &valued);
+        } else {
+            val1 = evaltree(t->child[1], &valued);
+            if (valued) {
+                val2 = evaltree(t->child[2], &valued);
+                valued = valued && val1 == val2;
+            }
+        }
 	goto done;
     } else if (t->op == opLogAnd) {
 	if (valued) {
@@ -598,7 +605,7 @@ long evaltree(exptree *t, int *defined)
 	t->value = val1;
     if (defined)
 	*defined = valued;
-    return defined ? val1 : 0;
+    return valued ? val1 : 0;
 }
 
 /* Extracts from the expression tree those parts that do not have a

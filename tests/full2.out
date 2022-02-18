@@ -57,7 +57,7 @@ two
 one
 #elif !defined(foo)  // comment
 two
-#elif defined foo ? !0 : !0
+#else
 three
 #endif
 /* -Ufoo -Ubar -Ubaz */
