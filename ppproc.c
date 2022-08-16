@@ -48,6 +48,10 @@ struct ppproc {
     int         stack[STACK_SIZE];      /* state flags for each level */
 };
 
+/* This global flag controls trigraph handling.
+ */
+static int trigraphsenabled = FALSE;
+
 /* Allocates a partial preprocessor object.
  */
 ppproc *initppproc(symset const *defs, symset const *undefs)
@@ -69,6 +73,13 @@ void freeppproc(ppproc *ppp)
     freeclexer(ppp->cl);
     freemstr(ppp->line);
     deallocate(ppp);
+}
+
+/* Enable and disable trigraph handling.
+ */
+void enabletrigraphs(int flag)
+{
+    trigraphsenabled = flag;
 }
 
 /* Set the state appropriate for the beginning of a file.
@@ -457,7 +468,7 @@ static int readline(ppproc *ppp, FILE *infile)
     erasemstr(ppp->line);
     while (ch != EOF) {
         appendmstr(ppp->line, ch);
-        if (back2 == '?' && back1 == '?') {
+        if (trigraphsenabled && back2 == '?' && back1 == '?') {
             switch (ch) {
               case '=':         replacement = '#';      break;
               case '(':         replacement = '[';      break;

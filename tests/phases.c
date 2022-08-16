@@ -16,9 +16,9 @@ l\
 s\
 e  /* backslash-newline pair within digraph */
 -Ufoo
-??=??/
-e??/
-n??/
-d??/
-i??/
-f  /* trigraphs */
+#\
+e\
+n\
+d\
+i\
+f  /* backslash-newline pair with MS-DOS newline sequence */

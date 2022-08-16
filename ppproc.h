@@ -23,6 +23,11 @@ extern ppproc *initppproc(symset const *defs, symset const *undefs);
  */
 extern void freeppproc(ppproc *ppp);
 
+/* Enable and disable trigraph handling in the preprocessor. Trigraph
+ * support is disabled by default.
+ */
+extern void enabletrigraphs(int flag);
+
 /* Partially preprocesses infile's contents to outfile.
  */
 extern void partialpreprocess(ppproc *ppp, FILE *infile, FILE *outfile);

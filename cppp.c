@@ -23,6 +23,7 @@ static char const *const yowzitch1 =
 static char const *const yowzitch2 =
     "      -D SYMBOL[=NUMBER]  Preprocess SYMBOL as defined [to NUMBER].\n"
     "      -U SYMBOL           Preprocess SYMBOL as undefined.\n"
+    "      -t, --trigraphs     Enable trigraph handling.\n"
     "      --help              Display this help and exit.\n"
     "      --version           Display version information and exit.\n\n";
 static char const *const yowzitch3 =
@@ -33,7 +34,7 @@ static char const *const yowzitch3 =
 /* Version identifier.
  */
 static char const *const vourzhon =
-    "cppp: version 2.8\n"
+    "cppp: version 2.9\n"
     "Copyright (C) 2011-2022 by Brian Raiter <breadbox@muppetlabs.com>\n"
     "License GPLv2+: GNU GPL version 2 or later.\n"
     "This is free software; you are free to change and redistribute it.\n"
@@ -131,6 +132,8 @@ static int readcmdline(int argc, char *argv[], symset *defs, symset *undefs)
             else if (removesymbolfromset(undefs, arg))
                 warn("undefining already-undefined symbol %s", arg);
             addsymboltoset(undefs, arg, 0L);
+        } else if (!strcmp(argv[i], "-t") || !strcmp(argv[i], "--trigraphs")) {
+            enabletrigraphs(TRUE);
         } else {
             fail("invalid option: %s", argv[i]);
         }

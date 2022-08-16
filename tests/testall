@@ -7,28 +7,26 @@ PROG=${1:-./cppp}
 fail()
 {
   echo "Unit test failure:" "$@" >&2
-  exit 1
+#  exit 1
 }
 
-# Run through an input file that responds to the preprocessor symbol
-# "foo", and verify that it behaves as expected.
+# Run through a single input file that responds to the preprocessor
+# symbol "foo", and verify that it behaves as expected.
 #
 goodparsingtest()
 {
   infile=$1
   "$PROG" "$infile" | cmp -s "$infile" || fail "altered $infile with no flags."
-  IFS='$' read -a inputs -d@ <$infile
-  for input in "${inputs[@]}" ; do
-    for flag in -Dfoo -Ufoo ; do
-      out=$(echo "$input" | "$PROG" $flag 2>&1)
-      test $? == 0 || fail "non-zero exit code for $infile with flag $flag."
-      test $out == $flag || fail "expected: $flag, got output: \"$out\""
-      test $out == $flag || fail "bad output for $infile with flag $flag."
-    done
+  for flag in -Dfoo -Ufoo ; do
+    out=$("$PROG" $flag "$infile" 2>&1)
+    test $? == 0 || fail "non-zero exit code for $infile with flag $flag."
+    test "$out" == $flag || fail "expected: $flag, got output: \"$out\""
+    test "$out" == $flag || fail "for $infile with flag $flag."
   done
 }
 
-# Run an invalid input file and verify that it produces an error message.
+# Run through an input file with multiple sections and verify that
+# each section produces an error message.
 #
 badparsingtest()
 {
@@ -38,6 +36,25 @@ badparsingtest()
     out=$(echo "$input" | "$PROG" -Dfoo 2>&1 >/dev/null)
     test $? != 0 || fail "failed to flag invalid input in $infile."
     test -z "$out" && fail "no error message for invalid input in $infile."
+  done
+}
+
+# Run an input file containing trigraphs and verify that trigraphs are
+# only detected when enabled.
+#
+trigraphtest()
+{
+  infile=$1
+  "$PROG" "$infile" | cmp -s "$infile" || fail "altered $infile with no flags."
+  "$PROG" -Dfoo "$infile" | cmp -s "$infile" ||
+      fail "altered $infile with trigraphs disabled."
+  for tflag in -t --trigraphs ; do
+    for dflag in -Dfoo -Ufoo ; do
+      out=$("$PROG" $tflag $dflag "$infile" 2>&1)
+      test $? == 0 || fail "error for $infile with flags \"$tflag $dflag\"."
+      test "$out" == $dflag || fail "expected: $dflag, got output: \"$out\""
+      test "$out" == $dflag || fail "for $infile with flags \"$tflag $dflag\"."
+    done
   done
 }
 
@@ -61,6 +78,7 @@ fulltest()
     test $? == 0 || fail "non-zero exit code for $infile with flags $flags."
   done | diff - "$checkfile"
   test $? == 0 || fail "bad output for $infile."
+
 }
 
 # Run an input file containing two preprocessor symbols that can take
@@ -87,12 +105,18 @@ misctests()
 {
   "$PROG" </dev/null >/dev/null
   test $? == 0 || fail "unable to run test program: $PROG."
-  out=$("$PROG" --help)
+  out=$("$PROG" --help </dev/null)
   test $? == 0 || fail "--help option not recognized."
   test -z "$out" && fail "no --help text."
-  out=$("$PROG" --version)
+  out=$("$PROG" --version </dev/null)
   test $? == 0 || fail "--version option not recoginzed."
   test -z "$out" && fail "no --version text."
+  out=$("$PROG" -D </dev/null 2>&1 >/dev/null)
+  test $? != 0 || fail "no warning for missing option argument."
+  test -z "$out" && fail "no error message for missing option argument."
+  out=$("$PROG" --nosuchoption </dev/null 2>&1 >/dev/null)
+  test $? != 0 || fail "no warning for invalid option."
+  test -z "$out" && fail "no error message for invalid option."
   out=$("$PROG" -Dfoo nosuchfile.c 2>&1 >/dev/null)
   test $? != 0 || fail "no warning for invalid filename."
   test -z "$out" && fail "no error message for invalid filename."
@@ -103,10 +127,12 @@ misctests()
 #
 
 misctests
+goodparsingtest tests/basic.c
 goodparsingtest tests/good.c
 goodparsingtest tests/lines.c
 badparsingtest tests/bad.c
 goodparsingtest tests/phases.c
+trigraphtest tests/qqs.c
 for f in tests/full*.c ; do
   fulltest "$f" "${f%.c}.out"
 done
