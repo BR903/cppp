@@ -228,11 +228,6 @@ char const *examinechar(struct clexer *cl, char const *input)
 	} else {
 	    ++cl->charquote;
 	}
-	if (cl->charquote > 2) {		/* optional */
-	    error(errBadCharLiteral);
-	    cl->state |= F_EndOfLine;
-	    return input;
-	}
     } else if (cl->state & F_InString) {
 	if (*in == '\\')
 	    readwhack(cl, in);
