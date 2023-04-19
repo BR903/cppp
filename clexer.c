@@ -55,6 +55,10 @@ static struct ppstatement const ppstatements[] = {
     { "undef",    cmdUndef    }
 };
 
+/* This global flag controls error reporting for multi-char literals.
+ */
+static int multicharsallowed = FALSE;
+
 
 /* Creates a C lexer object.
  */
@@ -75,6 +79,14 @@ clexer *initclexer(void)
 void freeclexer(clexer *cl)
 {
     deallocate(cl);
+}
+
+/* Enable and disable error reporting for character literals that
+ * contain more than one characters.
+ */
+void allowmultichars(int flag)
+{
+    multicharsallowed = flag;
 }
 
 /* Boolean functions that report on various aspects of the lexer's
@@ -118,10 +130,10 @@ static char const *readwhack(clexer *cl, char const *input)
         input += n - 1;
         cl->charcount += n - 1;
     } else if (*input == 'x') {
-        for (n = 1 ; n < 3 ; ++n)
+        for (n = 1 ; input[n] ; ++n)
             if (!isxdigit(input[n]))
                 break;
-        if (n != 3)
+        if (n == 1)
             error(errBadCharLiteral);
         input += n - 1;
         cl->charcount += n - 1;
@@ -193,10 +205,12 @@ static char const *examinechar(clexer *cl, char const *input)
             readwhack(cl, in);
             ++cl->charquote;
         } else if (*in == '\'') {
-            if (!cl->charquote)
+            if (!cl->charquote) {
                 error(errBadCharLiteral);
-            else if (cl->charquote > (cl->state & F_LongChar ? 4 : 1))
-                error(errBadCharLiteral);
+            } else if (!multicharsallowed) {
+                if (cl->charquote > (cl->state & F_LongChar ? 4 : 1))
+                    error(errBadCharLiteral);
+            }
             cl->state |= F_LeavingCharQuote;
             cl->state &= ~F_LongChar;
         } else {

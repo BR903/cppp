@@ -13,6 +13,7 @@
 #include "error.h"
 #include "symset.h"
 #include "ppproc.h"
+#include "clexer.h"
 
 /* Online help text.
  */
@@ -24,6 +25,7 @@ static char const *const yowzitch2 =
     "      -D SYMBOL[=NUMBER]  Preprocess SYMBOL as defined [to NUMBER].\n"
     "      -U SYMBOL           Preprocess SYMBOL as undefined.\n"
     "      -t, --trigraphs     Enable trigraph handling.\n"
+    "      -c, --multichar     Don't warn on multiple-character literals.\n"
     "      --help              Display this help and exit.\n"
     "      --version           Display version information and exit.\n\n";
 static char const *const yowzitch3 =
@@ -134,6 +136,8 @@ static int readcmdline(int argc, char *argv[], symset *defs, symset *undefs)
             addsymboltoset(undefs, arg, 0L);
         } else if (!strcmp(argv[i], "-t") || !strcmp(argv[i], "--trigraphs")) {
             enabletrigraphs(TRUE);
+        } else if (!strcmp(argv[i], "-c") || !strcmp(argv[i], "--multichar")) {
+            allowmultichars(TRUE);
         } else {
             fail("invalid option: %s", argv[i]);
         }

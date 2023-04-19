@@ -228,6 +228,56 @@ static int getcharconstant(char const *input)
     }
 }
 
+static int getmcharconstant(char const *input, char const *end)
+{
+    int accum, value, n;
+
+    accum = 0;
+    while (input < end) {
+        accum *= 256;
+        if (*input != '\\') {
+            accum |= *input;
+            ++input;
+            continue;
+        }
+        ++input;
+        if (*input == 'x') {
+            value = 0;
+            for (n = 1 ; n < 3 ; ++n) {
+                if (!isxdigit(input[n]))
+                    break;
+                value *= 16;
+                value |= (isdigit(input[n]) ? input[n] - '0' :
+                                              tolower(input[n]) - 'a' + 10);
+            }
+        } else if (*input >= '0' && *input <= '7') {
+            value = 0;
+            for (n = 0 ; n < 3 ; ++n) {
+                if (input[n] < '0' || input[n] > '7')
+                    break;
+                value *= 8;
+                value |= input[n] - '0';
+            }
+        } else {
+            n = 1;
+            switch (*input) {
+              case 'a':    value = '\a';        break;
+              case 'b':    value = '\b';        break;
+              case 'f':    value = '\f';        break;
+              case 'n':    value = '\n';        break;
+              case 'r':    value = '\r';        break;
+              case 't':    value = '\t';        break;
+              case 'v':    value = '\v';        break;
+              default:     value = *input;      break;
+            }
+        }
+        accum |= value;
+        input += n;
+    }
+
+    return accum;
+}
+
 /* Reads a constant from the C source at input via the given lexer,
  * and uses it to initialize the expression tree. Literal numbers,
  * strings, characters, macro identifiers and function-like macro
@@ -245,10 +295,10 @@ static char const *parseconstant(exptree *t, clexer *cl, char const *input)
     if (charquotep(cl)) {
         t->exp = expConstant;
         t->valued = TRUE;
-        t->value = getcharconstant(input + 1);
         while (!endoflinep(cl) && charquotep(cl))
             input = nextchar(cl, input);
         t->end = input;
+        t->value = getmcharconstant(t->begin + 1, t->end - 1);
         input = skipwhite(cl, input);
     } else if (!memcmp(input, "defined", 7)) {
         t->exp = expDefined;

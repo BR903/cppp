@@ -40,6 +40,12 @@ extern clexer *initclexer(void);
  */
 extern void freeclexer(clexer *cl);
 
+/* Enable and disable error reporting for character literals that
+ * contain more than one characters. Error reporting is enabled by
+ * default.
+ */
+extern void allowmultichars(int flag);
+
 /* These functions all return true or false depending on what the
  * lexer has last examined.
  */
