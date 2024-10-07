@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e                          # fail on error
 binary=${1:-./cppp}
 rm -f ./tests/pace.out
 for f in -Dfoo -Dbar -Dbaz -Ufoo -Ubar -Ubaz \

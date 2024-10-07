@@ -22,8 +22,11 @@ ppproc.o  : ppproc.c ppproc.h gen.h error.h symset.h clexer.h exptree.h
 cppp.o    : cppp.c gen.h unixisms.h error.h symset.h ppproc.h
 
 install:
-	cp ./cppp $(prefix)/bin/.
-	cp ./cppp.1 $(prefix)/share/man/man1/.
+	install -D ./cppp $(prefix)/bin/cppp
+	install -D ./cppp.1 $(prefix)/share/man/man1/cppp.1
+
+check:
+	./pace
 
 clean:
 	rm -f $(OBJLIST) cppp
