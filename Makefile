@@ -25,6 +25,9 @@ install:
 	cp ./cppp $(prefix)/bin/.
 	cp ./cppp.1 $(prefix)/share/man/man1/.
 
+check:
+	./pace
+
 clean:
 	rm -f $(OBJLIST) cppp
 
