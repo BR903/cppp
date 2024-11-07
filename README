@@ -1,3 +1,12 @@
+  NOTE TO GITHUB USERS
+
+This repository is no longer being updated on github.com, and will
+soon be closed. Please visit the project home page to find a link to
+its latest home:
+
+  <http://www.muppetlabs.com/~breadbox/software/cppp.html>
+
+
 cppp is a partial preprocessor for C/C++ code. It implements enough of
 the C preprocessor to identify the preprocessor statements #if,
 #ifdef, et al., and applies their effects for the identifiers that are
